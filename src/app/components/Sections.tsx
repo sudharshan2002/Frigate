@@ -923,7 +923,7 @@ export function Team() {
                     opacity: 0.3,
                   }}
                 >
-                  {m.name[0]}
+                  {m.name.split(' ').map(n => n[0]).join('')}
                 </div>
                 <div className="p-6">
                   <div
