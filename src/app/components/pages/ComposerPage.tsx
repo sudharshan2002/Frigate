@@ -93,7 +93,7 @@ export function ComposerPage() {
     try {
       const response = await api.sessions(8);
       setHistory(response.sessions);
-      setBackendNotice(response.isFallback ? response.fallbackMessage || "Showing example data while the backend reconnects." : null);
+      setBackendNotice(response.isFallback ? response.fallbackMessage || "Live services are unavailable, so Frigate is showing preview data." : null);
       if (!result && response.sessions.length > 0) {
         setPrompt(response.sessions[0].prompt);
       }
@@ -156,9 +156,9 @@ export function ComposerPage() {
       setHistory(sessions.sessions);
       setBackendNotice(
         response.isFallback
-          ? response.fallbackMessage || "Showing example data while the backend reconnects."
+          ? response.fallbackMessage || "Live services are unavailable, so Frigate is showing preview data."
           : sessions.isFallback
-            ? sessions.fallbackMessage || "Showing example data while the backend reconnects."
+            ? sessions.fallbackMessage || "Live services are unavailable, so Frigate is showing preview data."
             : null,
       );
       setActivePanel("explain");
@@ -216,7 +216,7 @@ export function ComposerPage() {
           <span style={{ ...mono, fontSize: 11, color: "#1A3D1A" }}>Prompt Composer</span>
           <div style={{ width: 1, height: 18, backgroundColor: "#9C9C9C18" }} />
           <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>
-            {result ? `Session #${result.session.id}` : history[0] ? `Recent session #${history[0].id}` : "Live backend"}
+            {result ? `Session #${result.session.id}` : history[0] ? `Recent session #${history[0].id}` : "Ready"}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -245,7 +245,7 @@ export function ComposerPage() {
 
         {backendNotice && (
           <div className="p-4" style={{ border: "1px solid #D1FF00", backgroundColor: "#D1FF0010" }}>
-            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Offline Example Mode</div>
+            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Preview Mode</div>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, margin: 0 }}>{backendNotice}</p>
           </div>
         )}
@@ -259,37 +259,11 @@ export function ComposerPage() {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-              <div style={{ maxWidth: 720 }}>
+              <div>
                 <div className="mb-3 flex items-center gap-2">
                   <Sparkles size={13} style={{ color: "#1A3D1A" }} />
                   <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Prompt Composer</span>
                 </div>
-                <div
-                  style={{
-                    fontFamily: "'TASA Orbiter', Inter, sans-serif",
-                    fontWeight: 900,
-                    fontSize: "clamp(1.55rem, 2.3vw, 2.35rem)",
-                    lineHeight: 1,
-                    letterSpacing: "-0.045em",
-                    color: frigateText,
-                    marginBottom: 10,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  The editor should feel like the same Frigate product.
-                </div>
-                <p
-                  style={{
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 15,
-                    lineHeight: "170%",
-                    color: frigateMuted,
-                    margin: 0,
-                    maxWidth: 640,
-                  }}
-                >
-                  Compose the request, choose the output type, and inspect the influence map inside a calmer, more editorial workspace that matches the rest of the app.
-                </p>
               </div>
 
               <div className="flex items-center gap-2">

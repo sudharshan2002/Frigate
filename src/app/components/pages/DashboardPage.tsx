@@ -74,9 +74,9 @@ export function DashboardPage() {
           setSessions(sessionResponse);
           setBackendNotice(
             dashboardResponse.isFallback
-              ? dashboardResponse.fallbackMessage || "Showing example data while the backend reconnects."
+              ? dashboardResponse.fallbackMessage || "Live services are unavailable, so Frigate is showing preview data."
               : sessionResponse.isFallback
-                ? sessionResponse.fallbackMessage || "Showing example data while the backend reconnects."
+                ? sessionResponse.fallbackMessage || "Live services are unavailable, so Frigate is showing preview data."
                 : null,
           );
         }
@@ -118,7 +118,7 @@ export function DashboardPage() {
             <BarChart3 size={13} style={{ color: "#1A3D1A" }} />
             <span style={{ ...mono, fontSize: 11, color: "#1A3D1A" }}>Trust Dashboard</span>
             <div style={{ width: 1, height: 14, backgroundColor: "#9C9C9C18" }} />
-            <span style={{ ...mono, fontSize: 11, color: "#686868" }}>Live backend metrics</span>
+            <span style={{ ...mono, fontSize: 11, color: "#686868" }}>Run performance and system health</span>
           </div>
           <div className="flex items-center gap-1">
             {(["overview", "sessions", "system"] as const).map((tab) => (
@@ -146,7 +146,7 @@ export function DashboardPage() {
 
         {backendNotice && (
           <div className="p-4" style={{ border: "1px solid #D1FF00", backgroundColor: "#D1FF0010" }}>
-            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Offline Example Mode</div>
+            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Preview Mode</div>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: "#686868", margin: 0 }}>{backendNotice}</p>
           </div>
         )}

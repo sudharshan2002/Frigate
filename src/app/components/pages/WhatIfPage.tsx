@@ -89,7 +89,7 @@ export function WhatIfPage() {
         mode: nextMode,
       });
       setResult(response);
-      setBackendNotice(response.isFallback ? response.fallbackMessage || "Showing example data while the backend reconnects." : null);
+      setBackendNotice(response.isFallback ? response.fallbackMessage || "Live services are unavailable, so Frigate is showing preview data." : null);
     } catch (compareError) {
       setError(compareError instanceof Error ? compareError.message : "Unable to compare prompts.");
     } finally {
@@ -220,7 +220,7 @@ export function WhatIfPage() {
 
         {backendNotice && (
           <div className="p-4" style={{ border: "1px solid #D1FF00", backgroundColor: "#D1FF0010" }}>
-            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Offline Example Mode</div>
+            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Preview Mode</div>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: "#686868", margin: 0 }}>{backendNotice}</p>
           </div>
         )}

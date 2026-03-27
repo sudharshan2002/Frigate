@@ -90,17 +90,20 @@ async def generate_content(payload: GenerateRequest, request: Request) -> Genera
 
     try:
         if payload.mode == "image":
-            provider_result = await service.generate_image(payload.prompt)
+            provider_result = await service.generate_image(payload.prompt, payload.reference_image)
         else:
-            provider_result = await service.generate_text(payload.prompt)
+            provider_result = await service.generate_text(payload.prompt, payload.reference_image)
 
         response_time_ms = round((perf_counter() - started_at) * 1000, 2)
-        mapping = explanation_service.build_token_mapping(
+        analysis = explanation_service.analyze_prompt(
             prompt=payload.prompt,
             output=provider_result.analysis_text,
+            mode=payload.mode,
+            reference_image_used=payload.reference_image is not None,
         )
+        prompt_for_session = payload.prompt.strip() or "Reference-image-driven generation"
         session_payload = _build_session_payload(
-            prompt=payload.prompt,
+            prompt=prompt_for_session,
             output=provider_result.output,
             mode=payload.mode,
             source=payload.source,
@@ -127,8 +130,11 @@ async def generate_content(payload: GenerateRequest, request: Request) -> Genera
         return GenerateResponse(
             output=provider_result.output,
             provider=provider_result.provider,
-            tokens=tokenize_text(payload.prompt),
-            mapping=mapping,
+            tokens=tokenize_text(prompt_for_session),
+            mapping=analysis.mapping,
+            segments=analysis.segments,
+            explanation_summary=analysis.summary,
+            reference_image_used=payload.reference_image is not None,
             session=session,
         )
     except Exception as exc:  # pragma: no cover - defensive API guard
@@ -144,28 +150,43 @@ async def what_if_analysis(payload: WhatIfRequest, request: Request) -> WhatIfRe
     session_service = _get_session_service(request)
 
     try:
+        original_prompt = payload.original_prompt.strip() or "Reference-image-driven generation"
+        modified_prompt = payload.modified_prompt.strip() or "Reference-image-driven generation"
         difference = summarize_prompt_difference(
             original_prompt=payload.original_prompt,
             modified_prompt=payload.modified_prompt,
         )
         if payload.mode == "image":
             original_started_at = perf_counter()
-            original_result = await service.generate_image(payload.original_prompt)
+            original_result = await service.generate_image(payload.original_prompt, payload.original_reference_image)
             original_response_time = round((perf_counter() - original_started_at) * 1000, 2)
             modified_started_at = perf_counter()
-            modified_result = await service.generate_image(payload.modified_prompt)
+            modified_result = await service.generate_image(payload.modified_prompt, payload.modified_reference_image)
             modified_response_time = round((perf_counter() - modified_started_at) * 1000, 2)
         else:
             original_started_at = perf_counter()
-            original_result = await service.generate_text(payload.original_prompt)
+            original_result = await service.generate_text(payload.original_prompt, payload.original_reference_image)
             original_response_time = round((perf_counter() - original_started_at) * 1000, 2)
             modified_started_at = perf_counter()
-            modified_result = await service.generate_text(payload.modified_prompt)
+            modified_result = await service.generate_text(payload.modified_prompt, payload.modified_reference_image)
             modified_response_time = round((perf_counter() - modified_started_at) * 1000, 2)
+
+        original_analysis = explanation_service.analyze_prompt(
+            prompt=payload.original_prompt,
+            output=original_result.analysis_text,
+            mode=payload.mode,
+            reference_image_used=payload.original_reference_image is not None,
+        )
+        modified_analysis = explanation_service.analyze_prompt(
+            prompt=payload.modified_prompt,
+            output=modified_result.analysis_text,
+            mode=payload.mode,
+            reference_image_used=payload.modified_reference_image is not None,
+        )
 
         original_session = session_service.create_session(
             _build_session_payload(
-                prompt=payload.original_prompt,
+                prompt=original_prompt,
                 output=original_result.output,
                 mode=payload.mode,
                 source="what-if",
@@ -177,7 +198,7 @@ async def what_if_analysis(payload: WhatIfRequest, request: Request) -> WhatIfRe
         )
         modified_session = session_service.create_session(
             _build_session_payload(
-                prompt=payload.modified_prompt,
+                prompt=modified_prompt,
                 output=modified_result.output,
                 mode=payload.mode,
                 source="what-if",
@@ -211,6 +232,14 @@ async def what_if_analysis(payload: WhatIfRequest, request: Request) -> WhatIfRe
             difference=difference,
             original_session=original_session,
             modified_session=modified_session,
+            original_segments=original_analysis.segments,
+            modified_segments=modified_analysis.segments,
+            original_explanation_summary=original_analysis.summary,
+            modified_explanation_summary=modified_analysis.summary,
+            segment_changes=explanation_service.compare_segments(
+                original_analysis.segments,
+                modified_analysis.segments,
+            ),
             delta=ComparisonDelta(
                 confidence=round(modified_session.trust_score - original_session.trust_score, 2),
                 clarity=round(modified_session.clarity_score - original_session.clarity_score, 2),

@@ -5,22 +5,73 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+class ReferenceImageInput(BaseModel):
+    """Optional reference image supplied by the user."""
+
+    data_url: str | None = Field(default=None, description="Base64 data URL for a locally uploaded image")
+    url: str | None = Field(default=None, description="Remote URL for a reference image")
+    mime_type: str | None = Field(default=None, max_length=64)
+    name: str | None = Field(default=None, max_length=255)
+
+    @model_validator(mode="after")
+    def validate_reference_image(self) -> "ReferenceImageInput":
+        if not (self.data_url or self.url):
+            raise ValueError("Reference images require either a data_url or a url.")
+        return self
 
 
 class GenerateRequest(BaseModel):
     """Input payload for content generation."""
 
-    prompt: str = Field(..., min_length=1, description="User prompt text")
+    prompt: str = Field(default="", description="User prompt text")
     mode: Literal["text", "image"] = Field(default="text")
     source: Literal["composer", "what-if", "api"] = Field(default="composer")
+    reference_image: ReferenceImageInput | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def validate_generate_request(self) -> "GenerateRequest":
+        if not self.prompt.strip() and self.reference_image is None:
+            raise ValueError("Provide prompt text, a reference image, or both.")
+        return self
 
 
 class TokenImpact(BaseModel):
-    """Single token impact value."""
+    """Single token or segment impact value."""
 
     token: str
     impact: float = Field(..., ge=0.0, le=1.0)
+
+
+class PromptSegment(BaseModel):
+    """Structured prompt segment returned to the UI."""
+
+    id: str
+    label: str = Field(..., min_length=1, max_length=40)
+    text: str = Field(..., min_length=1, max_length=240)
+    kind: str = Field(..., min_length=1, max_length=40)
+    impact: float = Field(..., ge=0.0, le=1.0)
+    effect: str = Field(..., min_length=1, max_length=320)
+
+
+class PromptExplanationSummary(BaseModel):
+    """High-level explanation copy for the current prompt."""
+
+    overview: str = Field(..., min_length=1, max_length=500)
+    segment_strategy: str = Field(..., min_length=1, max_length=500)
+    improvement_tip: str = Field(..., min_length=1, max_length=500)
+
+
+class SegmentChange(BaseModel):
+    """Difference summary for a segment between prompt variants."""
+
+    label: str = Field(..., min_length=1, max_length=40)
+    before: str = Field(..., min_length=1, max_length=240)
+    after: str = Field(..., min_length=1, max_length=240)
+    effect: str = Field(..., min_length=1, max_length=320)
+    change_type: Literal["added", "removed", "modified", "unchanged"]
 
 
 class ExplainRequest(BaseModel):
@@ -39,7 +90,7 @@ class ExplainResponse(BaseModel):
 class SessionCreate(BaseModel):
     """Input payload for creating a stored generation session."""
 
-    prompt: str = Field(..., min_length=1)
+    prompt: str = Field(default="")
     output: str = Field(..., min_length=1)
     mode: Literal["text", "image"]
     source: Literal["composer", "what-if", "api"]
@@ -86,15 +137,28 @@ class GenerateResponse(BaseModel):
     provider: str
     tokens: list[str]
     mapping: list[TokenImpact]
+    segments: list[PromptSegment]
+    explanation_summary: PromptExplanationSummary
+    reference_image_used: bool = False
     session: SessionRecord
 
 
 class WhatIfRequest(BaseModel):
     """Input payload for prompt delta analysis."""
 
-    original_prompt: str = Field(..., min_length=1)
-    modified_prompt: str = Field(..., min_length=1)
+    original_prompt: str = Field(default="")
+    modified_prompt: str = Field(default="")
     mode: Literal["text", "image"] = Field(default="image")
+    original_reference_image: ReferenceImageInput | None = Field(default=None)
+    modified_reference_image: ReferenceImageInput | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def validate_what_if_request(self) -> "WhatIfRequest":
+        if not self.original_prompt.strip() and self.original_reference_image is None:
+            raise ValueError("Variant A requires prompt text, a reference image, or both.")
+        if not self.modified_prompt.strip() and self.modified_reference_image is None:
+            raise ValueError("Variant B requires prompt text, a reference image, or both.")
+        return self
 
 
 class ComparisonDelta(BaseModel):
@@ -111,6 +175,11 @@ class WhatIfResponse(BaseModel):
     difference: str
     original_session: SessionRecord
     modified_session: SessionRecord
+    original_segments: list[PromptSegment]
+    modified_segments: list[PromptSegment]
+    original_explanation_summary: PromptExplanationSummary
+    modified_explanation_summary: PromptExplanationSummary
+    segment_changes: list[SegmentChange]
     delta: ComparisonDelta
 
 

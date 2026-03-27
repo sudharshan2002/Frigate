@@ -21,32 +21,32 @@ const palette = {
 };
 
 const projectTypes = [
-  "Product demo",
-  "Pilot planning",
-  "Workflow redesign",
-  "Explainability review",
+  "Discovery call",
+  "Platform evaluation",
+  "Workflow review",
+  "Implementation planning",
 ];
 
 const quickLinks = [
   {
     icon: Sparkles,
-    label: "Product Demo",
-    title: "See the composer live",
-    body: "Walk through prompt mapping, live edits, and the trust layer with your own workflow in mind.",
-    subject: "Frigate demo request",
+    label: "Discovery",
+    title: "See where Frigate fits",
+    body: "Talk through your current workflow, the outputs you care about, and where explainability needs to show up first.",
+    subject: "Frigate discovery request",
   },
   {
     icon: Puzzle,
     label: "Integration",
-    title: "Connect Frigate to your stack",
-    body: "Use Frigate alongside your generation pipeline, creative tooling, or internal evaluation flow.",
+    title: "Plan the rollout",
+    body: "Map Frigate into your generation stack, review process, or internal tooling without disrupting what already works.",
     subject: "Frigate integration inquiry",
   },
   {
     icon: MessageSquareMore,
     label: "Strategy",
-    title: "Unblock a stuck prompt workflow",
-    body: "Bring the problem area, the messy prompt history, or the quality gap. We will help shape the next move.",
+    title: "Fix a trust or quality gap",
+    body: "Bring the prompt path, the review bottleneck, or the output inconsistency that is slowing the team down.",
     subject: "Frigate workflow strategy inquiry",
   },
 ];
@@ -145,14 +145,14 @@ function ContactHero() {
                 style={{
                   fontFamily: "'TASA Orbiter', Inter, sans-serif",
                   fontWeight: 900,
-                  fontSize: "clamp(2.2rem, 6vw, 6.9rem)",
+                  fontSize: "clamp(1.3rem, 3.4vw, 3.6rem)",
                   lineHeight: 0.9,
                   letterSpacing: "-0.065em",
                   textTransform: "uppercase",
                   color: palette.cream,
                 }}
               >
-                Bring us the prompt problem, the workflow mess, or the trust gap.
+                Talk to us about the workflow you need to make clearer, safer, and easier to ship.
               </span>
             </AnimatedHeadline>
 
@@ -167,8 +167,8 @@ function ContactHero() {
                   margin: "28px 0 0 0",
                 }}
               >
-                Frigate is built for teams that need more than outputs. If you are trying to make AI more
-                legible, more controllable, and easier to ship, this is the right place to start the conversation.
+                Frigate is for teams that need visibility into how prompts shape results. Reach out when you need
+                better reviewability, cleaner comparisons, or stronger confidence before launch.
               </p>
             </FadeIn>
           </div>
@@ -256,7 +256,7 @@ function ContactHero() {
                   >
                     <Mail size={15} style={{ color: palette.lime, marginTop: 2 }} />
                     <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.62)" }}>
-                      Best for demos, pilots, workflow reviews, and any question that starts with “our team keeps hitting this wall.”
+                      Best for workflow reviews, platform evaluations, rollout planning, and teams that need better visibility before shipping AI outputs.
                     </p>
                   </div>
 
@@ -266,7 +266,7 @@ function ContactHero() {
                   >
                     <CalendarRange size={15} style={{ color: palette.lime, marginTop: 2 }} />
                     <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.62)" }}>
-                      Useful first note: what you generate, where confidence drops, and what a better outcome should feel like.
+                      Helpful first context: what you generate, where review confidence drops, and what a stronger workflow should unlock.
                     </p>
                   </div>
                 </div>
@@ -308,7 +308,7 @@ function QuickRoutes() {
                   maxWidth: 560,
                 }}
               >
-                Choose the conversation you need, and we will meet it with the right context.
+                Start with the track that matches the work in front of you.
               </h2>
             </BlurReveal>
           </div>
@@ -325,8 +325,7 @@ function QuickRoutes() {
                   maxWidth: 620,
                 }}
               >
-                Frigate conversations usually start in one of three places: seeing the product live, figuring out
-                where it fits in an existing stack, or untangling a generation workflow that has become hard to trust.
+                Most teams come to Frigate for one of three reasons: to evaluate fit, plan implementation, or fix a workflow that has become hard to trust.
               </p>
             </BlurReveal>
           </div>
@@ -465,7 +464,7 @@ function ContactFormSection() {
                   maxWidth: 620,
                 }}
               >
-                Give us the shape of the problem. We will take it from there.
+                Share the workflow and the outcome you need to improve.
               </h2>
             </BlurReveal>
             <BlurReveal delay={0.14}>
@@ -479,8 +478,7 @@ function ContactFormSection() {
                   maxWidth: 470,
                 }}
               >
-                The strongest first message is not polished. It is specific. Tell us what your team is generating,
-                where the black box is hurting decisions, and what you need to trust before rollout.
+                The fastest way to get useful help is to describe what your team generates, where review slows down, and what has to become clearer before you can ship with confidence.
               </p>
             </BlurReveal>
 
@@ -492,12 +490,12 @@ function ContactFormSection() {
                   padding: 22,
                 }}
               >
-                <div style={{ ...mono, fontSize: 10, color: palette.lime, marginBottom: 14 }}>[Useful Inputs]</div>
+                <div style={{ ...mono, fontSize: 10, color: palette.lime, marginBottom: 14 }}>[Helpful Context]</div>
                 <div className="space-y-3">
                   {[
-                    "What type of outputs are you generating today?",
-                    "Where do teams lose confidence or spend too much time iterating?",
-                    "What would success look like after the workflow improves?",
+                    "What outputs does the team need to review or approve?",
+                    "Where does confidence drop or rework pile up today?",
+                    "What should feel easier after the workflow improves?",
                   ].map((line) => (
                     <div key={line} className="flex items-start gap-3">
                       <div className="mt-[7px] h-[6px] w-[6px] rounded-full" style={{ backgroundColor: palette.lime }} />
@@ -527,7 +525,7 @@ function ContactFormSection() {
                     <input
                       value={form.name}
                       onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                      placeholder="Jane Smith"
+                      placeholder="Your name"
                       style={fieldStyle}
                     />
                   </label>
@@ -538,7 +536,7 @@ function ContactFormSection() {
                       type="email"
                       value={form.email}
                       onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-                      placeholder="jane@company.com"
+                      placeholder="name@company.com"
                       style={fieldStyle}
                     />
                   </label>
@@ -550,7 +548,7 @@ function ContactFormSection() {
                     <input
                       value={form.company}
                       onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
-                      placeholder="Your team or studio"
+                      placeholder="Company or team"
                       style={fieldStyle}
                     />
                   </label>
@@ -589,7 +587,7 @@ function ContactFormSection() {
                   <textarea
                     value={form.message}
                     onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
-                    placeholder="Tell us what you are building, where outputs become hard to explain, and what a better workflow should unlock."
+                    placeholder="Tell us what you generate, where the review process breaks down, and what a better workflow should make possible."
                     style={{ ...fieldStyle, minHeight: 180, resize: "vertical" }}
                   />
                 </label>
@@ -615,7 +613,7 @@ function ContactFormSection() {
                   <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.52)", maxWidth: 320 }}>
                     {submitted
                       ? "Your mail app should be opening with the draft prefilled."
-                      : "This opens a prefilled email so nothing disappears into a black-box form."}
+                      : "Submitting opens an email draft with your details prefilled."}
                   </div>
                 </div>
               </form>
@@ -654,7 +652,7 @@ function ClosingCTA() {
                 color: palette.black,
               }}
             >
-              Want to show the team first? Start inside the composer, then come back with the rough edges.
+              Explore the composer first, then come back when you want help turning it into a working team process.
             </span>
           </AnimatedHeadline>
         </div>

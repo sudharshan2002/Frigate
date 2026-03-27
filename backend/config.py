@@ -29,14 +29,20 @@ class Settings:
     port: int
     reload: bool
     cors_origins: list[str]
-    replicate_api_token: str | None
-    replicate_model: str
-    replicate_wait_seconds: int
-    pollinations_base_url: str
-    pollinations_model: str
-    pollinations_width: int
-    pollinations_height: int
-    pollinations_nologo: bool
+    groq_api_key: str | None
+    groq_text_model: str
+    groq_analysis_model: str
+    groq_timeout_seconds: int
+    hf_api_token: str | None
+    hf_provider: str
+    hf_router_base_url: str
+    hf_text_to_image_model: str
+    hf_image_to_image_model: str
+    hf_vision_model: str
+    hf_image_width: int
+    hf_image_height: int
+    hf_num_inference_steps: int
+    hf_guidance_scale: float
     sqlite_db_path: Path
 
 
@@ -53,13 +59,19 @@ def get_settings() -> Settings:
         port=int(os.getenv("PORT", "8000")),
         reload=_parse_bool(os.getenv("RELOAD"), default=False),
         cors_origins=[origin.strip() for origin in cors_origins.split(",") if origin.strip()] or ["*"],
-        replicate_api_token=os.getenv("REPLICATE_API_TOKEN"),
-        replicate_model=os.getenv("REPLICATE_TEXT_MODEL", "meta/meta-llama-3-70b-instruct"),
-        replicate_wait_seconds=int(os.getenv("REPLICATE_WAIT_SECONDS", "60")),
-        pollinations_base_url=os.getenv("POLLINATIONS_BASE_URL", "https://image.pollinations.ai/prompt"),
-        pollinations_model=os.getenv("POLLINATIONS_MODEL", "flux"),
-        pollinations_width=int(os.getenv("POLLINATIONS_WIDTH", "1280")),
-        pollinations_height=int(os.getenv("POLLINATIONS_HEIGHT", "768")),
-        pollinations_nologo=_parse_bool(os.getenv("POLLINATIONS_NOLOGO"), default=True),
+        groq_api_key=os.getenv("GROQ_API_KEY"),
+        groq_text_model=os.getenv("GROQ_TEXT_MODEL", "llama-3.3-70b-versatile"),
+        groq_analysis_model=os.getenv("GROQ_ANALYSIS_MODEL", "llama-3.1-8b-instant"),
+        groq_timeout_seconds=int(os.getenv("GROQ_TIMEOUT_SECONDS", "45")),
+        hf_api_token=os.getenv("HF_TOKEN"),
+        hf_provider=os.getenv("HF_PROVIDER", "hf-inference"),
+        hf_router_base_url=os.getenv("HF_ROUTER_BASE_URL", "https://router.huggingface.co/v1"),
+        hf_text_to_image_model=os.getenv("HF_TEXT_TO_IMAGE_MODEL", "black-forest-labs/FLUX.1-dev"),
+        hf_image_to_image_model=os.getenv("HF_IMAGE_TO_IMAGE_MODEL", "black-forest-labs/FLUX.1-dev"),
+        hf_vision_model=os.getenv("HF_VISION_MODEL", "CohereLabs/aya-vision-32b:cohere"),
+        hf_image_width=int(os.getenv("HF_IMAGE_WIDTH", "1280")),
+        hf_image_height=int(os.getenv("HF_IMAGE_HEIGHT", "768")),
+        hf_num_inference_steps=int(os.getenv("HF_NUM_INFERENCE_STEPS", "28")),
+        hf_guidance_scale=float(os.getenv("HF_GUIDANCE_SCALE", "5.5")),
         sqlite_db_path=Path(db_path),
     )

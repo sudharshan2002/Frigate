@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
 
     app.state.settings = settings
     app.state.genai_service = GenAIService(settings)
-    app.state.explanation_service = ExplanationService()
+    app.state.explanation_service = ExplanationService(settings)
     app.state.metrics_service = MetricsService(settings.sqlite_db_path)
     app.state.session_service = SessionService(settings.sqlite_db_path)
     app.state.metrics_service.init_storage()

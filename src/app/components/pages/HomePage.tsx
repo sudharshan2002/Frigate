@@ -80,28 +80,6 @@ function LogoBar() {
 function Hero() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
-  const [videoOpen, setVideoOpen] = useState(false);
-
-  useEffect(() => {
-    if (!videoOpen) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setVideoOpen(false);
-      }
-    };
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [videoOpen]);
 
   return (
     <section className="relative w-full overflow-hidden" ref={heroRef} style={{ backgroundColor: "#060606", minHeight: "100vh" }}>
@@ -271,7 +249,7 @@ function Hero() {
 
         </div>
 
-        {/* Column 4: Side explainer and video box */}
+        {/* Column 4: Side explainer */}
         <div className="col-span-1 md:col-span-1 flex flex-col justify-end px-0 md:pl-8 lg:pl-10 pb-8 z-10 mt-16 md:mt-0">
           <FadeIn delay={2.2}>
             <div
@@ -284,100 +262,95 @@ function Hero() {
                 textTransform: "uppercase"
               }}
             >
-              <span className="opacity-60">PROMPTS ARE NO LONGER A BLACK BOX.</span> <span className="font-bold opacity-100">FRIGATE SHOWS WHAT MOVED THE RESULT.</span>
+              <span className="opacity-60">PROMPTS SHOULD BE REVIEWABLE.</span> <span className="font-bold opacity-100">FRIGATE KEEPS THE DECISION PATH VISIBLE.</span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setVideoOpen(true)}
-              className="relative w-full cursor-pointer overflow-hidden rounded-sm border border-[#ffffff15] bg-[#111] text-left"
-              style={{ aspectRatio: "1/1", maxWidth: 360 }}
+            <div
+              className="relative w-full overflow-hidden rounded-sm border border-[#ffffff15] bg-[#111] text-left"
+              style={{ maxWidth: 360, padding: 24 }}
             >
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1620825937374-87fc1d6aafdd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhcmslMjBncmVlbnxlbnwxfHx8fDE3NzQzNDEwOTF8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                alt="AI Visualization"
-                style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.7 }}
+              <div
+                className="absolute top-0 left-0 h-[3px] w-full"
+                style={{ background: "linear-gradient(90deg, #D1FF00 0%, rgba(209,255,0,0.12) 100%)" }}
               />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+              <div style={{ ...mono, fontSize: 9, color: "#F4F4E8", opacity: 0.5, marginBottom: 18 }}>
+                [Live View]
+              </div>
 
-              <div className="absolute bottom-5 left-5">
+              <div
+                style={{
+                  fontFamily: "'TASA Orbiter', Inter, sans-serif",
+                  fontWeight: 900,
+                  fontSize: "clamp(1.25rem, 2vw, 1.7rem)",
+                  lineHeight: 0.95,
+                  letterSpacing: "-0.045em",
+                  textTransform: "uppercase",
+                  color: "#F4F4E8",
+                  maxWidth: 260,
+                  marginBottom: 14,
+                }}
+              >
+                One workspace for prompt, output, and trace.
+              </div>
+
+              <p
+                style={{
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  color: "rgba(244,244,232,0.62)",
+                  margin: "0 0 22px 0",
+                }}
+              >
+                Frigate keeps the important parts of the workflow in view: what changed, what mattered most, and how confident the team should feel about the result.
+              </p>
+
+              <div className="space-y-3">
                 <div
-                  className="flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-[1.1]"
-                  style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: "#D1FF00" }}
+                  className="flex items-start gap-3"
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}
                 >
-                  <Play size={20} style={{ color: "#050505", marginLeft: 4 }} fill="#050505" />
+                  <div className="mt-[5px] h-[7px] w-[7px] rounded-full bg-[#D1FF00]" />
+                  <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.7)" }}>
+                    Prompt influence stays visible at the token and segment level.
+                  </p>
+                </div>
+
+                <div
+                  className="flex items-start gap-3"
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}
+                >
+                  <div className="mt-[5px] h-[7px] w-[7px] rounded-full bg-[#7DFFAF]" />
+                  <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.7)" }}>
+                    Side-by-side comparisons make revisions easier to explain in review.
+                  </p>
+                </div>
+
+                <div
+                  className="flex items-start gap-3"
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}
+                >
+                  <div className="mt-[5px] h-[7px] w-[7px] rounded-full bg-[#7DB5FF]" />
+                  <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.7)" }}>
+                    Trust, clarity, and quality signals stay attached to every run.
+                  </p>
                 </div>
               </div>
 
-              <div className="absolute bottom-5 right-5 flex items-center bg-[#000000e0] px-3 py-2 rounded-sm border border-[#ffffff15]">
-                <div className="w-2 h-2 rounded-full bg-[#D1FF00] animate-pulse mr-2" />
-                <span style={{ ...mono, fontSize: 9, color: "#F4F4E8", fontWeight: 700 }}>LIVE MAPPING</span>
-              </div>
-            </button>
+              <button
+                type="button"
+                onClick={() => navigate("/composer")}
+                className="mt-6 inline-flex items-center gap-2 border-none bg-transparent p-0 cursor-pointer"
+                style={{ ...mono, fontSize: 10, color: "#D1FF00" }}
+              >
+                Open the workspace
+                <ArrowRight size={12} />
+              </button>
+            </div>
           </FadeIn>
         </div>
       </div>
-
-      <AnimatePresence>
-        {videoOpen && (
-          <motion.div
-            className="fixed inset-0 z-[140] flex items-center justify-center p-4 md:p-8"
-            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            animate={{ opacity: 1, backdropFilter: "blur(16px)" }}
-            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <motion.button
-              type="button"
-              className="absolute inset-0 cursor-pointer border-none bg-[rgba(5,5,5,0.7)]"
-              aria-label="Close video"
-              onClick={() => setVideoOpen(false)}
-            />
-
-            <motion.div
-              className="relative z-10 w-full overflow-hidden rounded-sm border border-[rgba(255,255,255,0.14)] bg-[#0b0b0b] shadow-[0_40px_120px_rgba(0,0,0,0.45)]"
-              style={{ maxWidth: 1100 }}
-              initial={{ opacity: 0, y: 24, scale: 0.94, filter: "blur(18px)" }}
-              animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(12px)" }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <div
-                className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] px-4 py-3 md:px-5"
-                style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0))" }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-[#D1FF00]" />
-                  <span style={{ ...mono, fontSize: 10, color: "#F4F4E8", fontWeight: 700 }}>Frigate Walkthrough</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setVideoOpen(false)}
-                  className="flex items-center gap-2 border border-[rgba(255,255,255,0.14)] bg-[#050505] px-3 py-2 text-[#F4F4E8]"
-                  style={{ borderRadius: 2 }}
-                >
-                  <X size={14} />
-                  <span style={{ ...mono, fontSize: 9, fontWeight: 700 }}>Close</span>
-                </button>
-              </div>
-
-              <div className="relative aspect-video w-full bg-black">
-                <video
-                  controls
-                  autoPlay
-                  playsInline
-                  poster="https://images.unsplash.com/photo-1620825937374-87fc1d6aafdd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhcmslMjBncmVlbnxlbnwxfHx8fDE3NzQzNDEwOTF8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                >
-                  <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
-                </video>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 }
@@ -584,36 +557,26 @@ function Manifesto() {
           {/* Bottom Grid Elements */}
           <div className="col-span-4 md:col-span-1 pt-16 md:pt-32 z-10">
             <FadeIn delay={0.4}>
-              <div className="flex gap-[-8px]">
+              <div className="flex flex-col gap-3">
                 {[
-                  "https://images.unsplash.com/photo-1689600944138-da3b150d9cb8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMGJ1c2luZXNzJTIwcG9ydHJhaXR8ZW58MXx8fHwxNzc0MjU4MjcyfDA&ixlib=rb-4.1.0&q=80&w=1080",
-                  "https://images.unsplash.com/photo-1758518727888-ffa196002e59?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGV4ZWN1dGl2ZSUyMHBvcnRyYWl0JTIwcHJvZmVzc2lvbmFsfGVufDF8fHx8MTc3NDI3MDAxNXww&ixlib=rb-4.1.0&q=80&w=1080",
-                  "https://images.unsplash.com/photo-1769071166862-8cc3a6f2ac5c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW4lMjBzdGFydHVwJTIwZm91bmRlciUyMHBvcnRyYWl0JTIwY2FzdWFsfGVufDF8fHx8MTc3NDM0MTExNnww&ixlib=rb-4.1.0&q=80&w=1080",
-                  "https://images.unsplash.com/photo-1624831662357-97d6af9055b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5b3VuZyUyMHByb2Zlc3Npb25hbCUyMHRlYW0lMjBtZW1iZXIlMjBzbWlsaW5nfGVufDF8fHx8MTc3NDM0MTEyMnww&ixlib=rb-4.1.0&q=80&w=1080",
-                ].map((src, i) => (
+                  "Text, image, and multimodal workflows",
+                  "Version comparison built into review",
+                  "Trust signals attached to every run",
+                ].map((item, index) => (
                   <div
-                    key={i}
-                    className="rounded-full overflow-hidden border border-[#050505]"
+                    key={item}
+                    className="flex items-start gap-3"
                     style={{
-                      width: 48, height: 48,
-                      marginLeft: i > 0 ? -12 : 0,
-                      position: "relative", zIndex: 4 - i,
+                      borderTop: index === 0 ? "none" : "1px solid rgba(5,5,5,0.1)",
+                      paddingTop: index === 0 ? 0 : 12,
                     }}
                   >
-                    <ImageWithFallback src={src} alt="Team" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <div className="mt-[7px] h-[7px] w-[7px] rounded-full" style={{ backgroundColor: index === 0 ? "#D1FF00" : index === 1 ? "#7DB5FF" : "#7DFFAF" }} />
+                    <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.45, color: "#050505", maxWidth: 240 }}>
+                      {item}
+                    </p>
                   </div>
                 ))}
-                <div
-                  className="rounded-full flex items-center justify-center border border-[#050505]"
-                  style={{
-                    width: 48, height: 48,
-                    backgroundColor: "#050505", marginLeft: -12,
-                    fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 12, color: "#D1FF00",
-                    position: "relative", zIndex: 0
-                  }}
-                >
-                  +6
-                </div>
               </div>
             </FadeIn>
           </div>

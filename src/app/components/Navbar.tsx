@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router";
 import { Menu, X } from "lucide-react";
 import { GrainLocal } from "./GrainOverlay";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const WIPE_COVER_MS = 820;
@@ -31,11 +30,11 @@ const menuLinks: MenuTarget[] = [
   { label: "CONTACT", path: "/contact" },
 ];
 
-const socials = [
-  { num: "1.0", label: "X / TWITTER", href: "#" },
-  { num: "1.1", label: "LINKEDIN", href: "#" },
-  { num: "1.2", label: "INSTAGRAM", href: "#" },
-  { num: "1.3", label: "YOUTUBE", href: "#" },
+const contactLinks = [
+  { num: "1.0", label: "EMAIL PRODUCT TEAM", href: "mailto:hello@frigate.ai" },
+  { num: "1.1", label: "OPEN CONTACT PAGE", href: "/contact" },
+  { num: "1.2", label: "PRIVACY POLICY", href: "/legal/privacy-policy" },
+  { num: "1.3", label: "TERMS & CONDITIONS", href: "/legal/terms-conditions" },
 ];
 
 const utilityLinks: MenuTarget[] = [
@@ -46,7 +45,7 @@ const utilityLinks: MenuTarget[] = [
 ];
 
 const featuredCardTagline = "Explainability by default";
-const featuredCardBody = "How Frigate surfaced the exact phrase that pushed a generation off-course, then guided the fix in one edit.";
+const featuredCardBody = "Frigate traces how prompt changes affect clarity, tone, and output quality so teams can refine with evidence instead of guesswork.";
 
 function MenuWipe({ active, cycleKey }: { active: boolean; cycleKey: number }) {
   return (
@@ -454,7 +453,7 @@ export function Navbar() {
                           transform: "rotate(180deg)",
                         }}
                       >
-                        Product brief
+                        Frigate
                       </div>
 
                       <div
@@ -471,14 +470,88 @@ export function Navbar() {
                           transform: "rotate(180deg)",
                         }}
                       >
-                        Text + image AI
+                        Product system
                       </div>
 
-                      <ImageWithFallback
-                        src="/menu-placeholder-art.svg"
-                        alt="Placeholder featured story art"
-                        style={{ display: "block", height: 258, width: "100%", objectFit: "cover" }}
-                      />
+                      <div
+                        style={{
+                          display: "grid",
+                          height: 258,
+                          width: "100%",
+                          padding: 20,
+                          background:
+                            "radial-gradient(circle at top left, rgba(209,255,0,0.22), transparent 38%), linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1.15fr 0.85fr",
+                            gap: 12,
+                            height: "100%",
+                          }}
+                        >
+                          <div
+                            style={{
+                              border: "1px solid rgba(255,255,255,0.12)",
+                              backgroundColor: "rgba(5,5,5,0.18)",
+                              padding: 16,
+                            }}
+                          >
+                            <div style={{ ...mono, fontSize: 8, color: "#F4F4E8", opacity: 0.56, marginBottom: 14 }}>
+                              Prompt map
+                            </div>
+                            {[
+                              "Position product around explainability",
+                              "Track edits across text and image",
+                              "Show what changed between runs",
+                            ].map((line, index) => (
+                              <div key={line} className="flex items-start gap-2" style={{ marginBottom: index === 2 ? 0 : 10 }}>
+                                <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: index === 0 ? "#D1FF00" : "#7DFFAF", marginTop: 5 }} />
+                                <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, lineHeight: 1.45, color: "#F4F4E8" }}>
+                                  {line}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="grid gap-10">
+                            <div
+                              style={{
+                                border: "1px solid rgba(255,255,255,0.12)",
+                                backgroundColor: "rgba(255,255,255,0.05)",
+                                padding: 14,
+                              }}
+                            >
+                              <div style={{ ...mono, fontSize: 8, color: "#F4F4E8", opacity: 0.56, marginBottom: 12 }}>
+                                Output
+                              </div>
+                              <div style={{ height: 56, borderRadius: 14, background: "linear-gradient(135deg, rgba(209,255,0,0.28), rgba(125,181,255,0.14))" }} />
+                            </div>
+
+                            <div
+                              style={{
+                                border: "1px solid rgba(255,255,255,0.12)",
+                                backgroundColor: "rgba(255,255,255,0.05)",
+                                padding: 14,
+                              }}
+                            >
+                              <div style={{ ...mono, fontSize: 8, color: "#F4F4E8", opacity: 0.56, marginBottom: 12 }}>
+                                Trust signals
+                              </div>
+                              <div style={{ display: "grid", gap: 8 }}>
+                                {[91, 88, 94].map((value) => (
+                                  <div key={value}>
+                                    <div style={{ height: 4, backgroundColor: "rgba(255,255,255,0.1)", overflow: "hidden" }}>
+                                      <div style={{ width: `${value}%`, height: "100%", backgroundColor: "#D1FF00" }} />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
                       <div className="menu-tag-pill">{featuredCardTagline}</div>
                     </div>
@@ -533,7 +606,7 @@ export function Navbar() {
 
                     <div className="mt-3 max-w-[18rem]">
                     <div style={{ ...mono, fontSize: 9, color: "#050505", opacity: 0.42, marginBottom: 10 }}>
-                      Featured Case Study
+                      Why teams use Frigate
                     </div>
                     <div
                       style={{
@@ -604,10 +677,10 @@ export function Navbar() {
 
                     <div className="mt-5">
                       <div style={{ ...mono, fontSize: 9, color: "#050505", opacity: 0.38, marginBottom: 18 }}>
-                        [Socials]
+                        [Contact]
                       </div>
                       <div className="grid gap-x-12 gap-y-1 md:grid-cols-2">
-                        {socials.map((item, index) => (
+                        {contactLinks.map((item, index) => (
                           <HighlightGlitchLink
                             key={item.num}
                             num={item.num}
@@ -668,10 +741,10 @@ export function Navbar() {
 
                   <div className="mt-8">
                     <div style={{ ...mono, fontSize: 9, color: "#050505", opacity: 0.38, marginBottom: 16 }}>
-                      [Socials]
+                      [Contact]
                     </div>
                     <div className="grid gap-y-1">
-                      {socials.map((item, index) => (
+                      {contactLinks.map((item, index) => (
                         <HighlightGlitchLink
                           key={item.num}
                           num={item.num}
