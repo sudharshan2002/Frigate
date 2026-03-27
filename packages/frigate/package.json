@@ -1,0 +1,36 @@
+{
+  "name": "frigate-sdk",
+  "version": "0.1.1",
+  "description": "Official JavaScript SDK and CLI for the Frigate explainable AI platform.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "bin": {
+    "frigate": "src/cli.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "frigate",
+    "frigate-sdk",
+    "sdk",
+    "cli",
+    "ai",
+    "prompt",
+    "explainability"
+  ],
+  "license": "MIT"
+}

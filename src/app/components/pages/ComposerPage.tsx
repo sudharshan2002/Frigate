@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { GrainLocal } from "../GrainOverlay";
+import { ImageGenerationHeatmap } from "../ImageGenerationHeatmap";
 import { AppPageLinks } from "./AppPageLinks";
 import {
   Send,
@@ -14,8 +15,18 @@ import {
   Image as ImageIcon,
   Type,
   GitCompare,
+  Upload,
+  X,
 } from "lucide-react";
-import { api, formatRelativeTime, type GenerateResponse, type GenerationMode, type SessionRecord } from "../../lib/api";
+import {
+  api,
+  formatRelativeTime,
+  type GenerateResponse,
+  type GenerationMode,
+  type PromptSegment,
+  type ReferenceImageInput,
+  type SessionRecord,
+} from "../../lib/api";
 
 const mono: React.CSSProperties = {
   fontFamily: "'Roboto Mono', monospace",
@@ -29,21 +40,26 @@ const frigateText = "#050505";
 const frigateMuted = "#686868";
 
 const starterPrompts: Record<GenerationMode, string> = {
-  image: "Design a premium launch hero for Frigate, an explainable AI platform, with a glass cockpit visual metaphor, prompt-to-output mapping cues, and calm cinematic lighting",
-  text: "Write a polished launch announcement for Frigate that explains how prompt-to-output mapping, trust scoring, and what-if comparisons help AI teams ship safely.",
+  image: "Premium Frigate launch hero, glass cockpit interface, prompt-to-output mapping arcs, calm cinematic lighting, controlled lime signal accents",
+  text: "Frigate helps AI teams trace why a prompt produced a result, compare revisions safely, and launch with more confidence.",
 };
 
 const suggestionMap: Record<GenerationMode, string[]> = {
   image: [
-    "Add live influence overlay",
-    "Try before/after diff ribbon",
-    "Consider multimodal control room",
+    "Live influence overlay",
+    "Before/after diff ribbon",
+    "Multimodal control room",
   ],
   text: [
-    "Add a sharper CTA",
-    "Mention trusted deployment",
-    "Include a short product summary",
+    "Sharper CTA",
+    "Trusted deployment note",
+    "Short product summary",
   ],
+};
+
+const composerPlaceholders: Record<GenerationMode, string> = {
+  image: "Frigate hero frame, luminous operator glass, visible influence ribbons, restrained cinematic light",
+  text: "Frigate gives review teams a clear read on prompt intent, output risk, and the next safe edit.",
 };
 
 function ConfidenceMeter({ value, label }: { value: number; label: string }) {
@@ -65,20 +81,44 @@ function ConfidenceMeter({ value, label }: { value: number; label: string }) {
   );
 }
 
-function buildExplanationText(token: string, impact: number, mode: GenerationMode) {
-  if (impact >= 0.85) {
-    return `"${token}" is acting like a primary steering term and is strongly shaping the ${mode === "image" ? "composition" : "draft direction"}.`;
+function buildExplanationText(segment: PromptSegment, mode: GenerationMode) {
+  if (segment.effect) {
+    return segment.effect;
   }
-  if (impact >= 0.65) {
-    return `"${token}" is reinforcing the tone and helping the system stay aligned with the prompt's main intent.`;
+  if (segment.impact >= 0.85) {
+    return `"${segment.text}" is acting like a primary steering segment and is strongly shaping the ${mode === "image" ? "composition" : "draft direction"}.`;
   }
-  return `"${token}" is providing secondary context that supports the final ${mode === "image" ? "visual treatment" : "wording"}, but with lower leverage.`;
+  if (segment.impact >= 0.65) {
+    return `"${segment.text}" is reinforcing the tone and helping the system stay aligned with the prompt's main intent.`;
+  }
+  return `"${segment.text}" is providing secondary context that supports the final ${mode === "image" ? "visual treatment" : "wording"}, but with lower leverage.`;
+}
+
+function readReferenceImage(file: File): Promise<ReferenceImageInput> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      if (!result) {
+        reject(new Error("Unable to read the selected image."));
+        return;
+      }
+      resolve({
+        data_url: result,
+        mime_type: file.type || "image/png",
+        name: file.name,
+      });
+    };
+    reader.onerror = () => reject(new Error("Unable to read the selected image."));
+    reader.readAsDataURL(file);
+  });
 }
 
 export function ComposerPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<GenerationMode>("image");
   const [prompt, setPrompt] = useState(starterPrompts.image);
+  const [referenceImage, setReferenceImage] = useState<ReferenceImageInput | null>(null);
   const [result, setResult] = useState<GenerateResponse | null>(null);
   const [history, setHistory] = useState<SessionRecord[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -109,25 +149,36 @@ export function ComposerPage() {
   }, []);
 
   const segments = useMemo(() => {
-    return (result?.mapping || [])
-      .slice()
-      .sort((a, b) => b.impact - a.impact)
-      .slice(0, 5)
-      .map((item, index) => ({
-        text: item.token,
-        influence: item.impact,
-        color: segmentColors[index % segmentColors.length],
-      }));
+    const sourceSegments =
+      result?.segments?.length
+        ? result.segments
+        : (result?.mapping || []).slice(0, 5).map((item, index) => ({
+            id: `mapping-${index}`,
+            label: `Segment ${index + 1}`,
+            text: item.token,
+            kind: "detail",
+            impact: item.impact,
+            effect: "",
+          }));
+
+    return sourceSegments.map((item, index) => ({
+      ...item,
+      influence: item.impact,
+      color: segmentColors[index % segmentColors.length],
+    }));
   }, [result]);
 
   const guidedFeedback = useMemo(() => {
     if (!result) return [];
 
     const feedback = [];
-    const strongestToken = segments[0]?.text;
+    const strongestToken = segments[0]?.label || segments[0]?.text;
 
     if (strongestToken) {
       feedback.push(`"${strongestToken}" is currently the strongest lever in this run.`);
+    }
+    if (result.explanation_summary?.segment_strategy) {
+      feedback.push(result.explanation_summary.segment_strategy);
     }
     if (result.session.clarity_score < 84) {
       feedback.push("Add one more concrete constraint to tighten output predictability.");
@@ -135,22 +186,23 @@ export function ComposerPage() {
       feedback.push("Prompt structure is clear enough to support stable refinement.");
     }
     feedback.push(
-      mode === "image"
-        ? "Add an explainability cue if you want a richer visual story in the dashboard."
-        : "A short CTA or closing outcome statement would make the text output feel more launch-ready.",
+      result.explanation_summary?.improvement_tip ||
+        (mode === "image"
+          ? "Add an explainability cue if you want a richer visual story in the dashboard."
+          : "A short CTA or closing outcome statement would make the text output feel more launch-ready."),
     );
 
     return feedback;
   }, [mode, result, segments]);
 
   async function handleGenerate() {
-    if (!prompt.trim()) return;
+    if (!prompt.trim() && !referenceImage) return;
 
     setIsGenerating(true);
     setError(null);
 
     try {
-      const response = await api.generate({ prompt, mode, source: "composer" });
+      const response = await api.generate({ prompt, mode, source: "composer", reference_image: referenceImage });
       setResult(response);
       const sessions = await api.sessions(8);
       setHistory(sessions.sessions);
@@ -170,11 +222,7 @@ export function ComposerPage() {
   }
 
   function handleSuggestionClick(suggestion: string) {
-    const normalized = suggestion
-      .replace(/^Add /, "")
-      .replace(/^Try /, "")
-      .replace(/^Consider /, "");
-    setPrompt((current) => `${current.trim().replace(/[.]?$/, "")}. ${normalized}`);
+    setPrompt((current) => `${current.trim().replace(/[.]?$/, "")}. ${suggestion}`);
   }
 
   async function handleCopy() {
@@ -190,15 +238,30 @@ export function ComposerPage() {
   }
 
   function openInWhatIf(nextPrompt = prompt, nextMode = mode) {
-    if (!nextPrompt.trim()) return;
+    if (!nextPrompt.trim() && !referenceImage) return;
 
     navigate("/what-if", {
       state: {
         prompt: nextPrompt.trim(),
         mode: nextMode,
         fromComposer: true,
+        referenceImage,
       },
     });
+  }
+
+  async function handleReferenceImageChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const nextReferenceImage = await readReferenceImage(file);
+      setReferenceImage(nextReferenceImage);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Unable to load the selected image.");
+    } finally {
+      event.target.value = "";
+    }
   }
 
   return (
@@ -292,11 +355,11 @@ export function ComposerPage() {
             </div>
 
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3" style={{ border: "1px solid #00000010", backgroundColor: "#F2F1E8", padding: 14 }}>
-                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Current Prompt</span>
+                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Prompt Canvas</span>
                 <button
                   type="button"
                   onClick={() => openInWhatIf()}
-                  disabled={!prompt.trim()}
+                  disabled={!prompt.trim() && !referenceImage}
                   className="cursor-pointer border-none flex items-center gap-2"
                   style={{
                     ...mono,
@@ -304,7 +367,7 @@ export function ComposerPage() {
                     color: frigateText,
                     backgroundColor: "#D1FF00",
                     padding: "9px 12px",
-                    opacity: prompt.trim() ? 1 : 0.45,
+                    opacity: prompt.trim() || referenceImage ? 1 : 0.45,
                   }}
                 >
                   <GitCompare size={12} />
@@ -317,7 +380,7 @@ export function ComposerPage() {
               onChange={(event) => setPrompt(event.target.value)}
               rows={5}
               className="w-full resize-none outline-none"
-              placeholder={`Describe the ${mode} result you want to generate...`}
+              placeholder={composerPlaceholders[mode]}
               style={{
                 fontFamily: "Inter, sans-serif",
                 fontSize: 17,
@@ -328,6 +391,50 @@ export function ComposerPage() {
                 padding: 20,
               }}
             />
+
+            <div className="mt-4 p-4" style={{ border: "1px solid #00000010", backgroundColor: "#F2F1E8" }}>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div style={{ ...mono, fontSize: 10, color: frigateMuted, marginBottom: 6 }}>Source Inputs</div>
+                  <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, margin: 0 }}>
+                    Blend written intent with a visual anchor and Frigate will show which ingredients carried the run, where they landed, and how strongly they shaped the result.
+                  </p>
+                </div>
+                <label
+                  className="cursor-pointer"
+                  style={{ ...mono, fontSize: 10, color: frigateText, backgroundColor: "#D1FF00", padding: "10px 12px" }}
+                >
+                  <input type="file" accept="image/*" className="hidden" onChange={handleReferenceImageChange} />
+                  <span className="flex items-center gap-2">
+                    <Upload size={12} />
+                    {referenceImage ? "Replace Image" : "Attach Image"}
+                  </span>
+                </label>
+              </div>
+
+              {referenceImage && (
+                <div className="flex flex-wrap items-center gap-4">
+                  {referenceImage.data_url ? (
+                    <img src={referenceImage.data_url} alt={referenceImage.name || "Reference"} style={{ width: 120, height: 90, objectFit: "cover", border: "1px solid #00000010" }} />
+                  ) : null}
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Reference Image Live</div>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, margin: 0 }}>
+                      {referenceImage.name || "Uploaded image"} is acting as a visual anchor, so Frigate can read the image and prompt as one composed instruction set.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReferenceImage(null)}
+                    className="cursor-pointer border-none flex items-center gap-2"
+                    style={{ ...mono, fontSize: 10, color: frigateMuted, backgroundColor: "#F9F8EF", padding: "8px 10px" }}
+                  >
+                    <X size={12} />
+                    Clear
+                  </button>
+                </div>
+              )}
+            </div>
 
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2">
@@ -351,7 +458,7 @@ export function ComposerPage() {
               </div>
               <button
                 onClick={handleGenerate}
-                disabled={isGenerating}
+                disabled={isGenerating || (!prompt.trim() && !referenceImage)}
                 className="cursor-pointer border-none flex items-center gap-2"
                 style={{
                   ...mono,
@@ -360,7 +467,7 @@ export function ComposerPage() {
                   color: frigateText,
                   backgroundColor: "#D1FF00",
                   padding: "13px 20px",
-                  opacity: isGenerating ? 0.6 : 1,
+                  opacity: isGenerating || (!prompt.trim() && !referenceImage) ? 0.6 : 1,
                 }}
               >
                 {isGenerating ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}
@@ -379,6 +486,9 @@ export function ComposerPage() {
               <Eye size={13} style={{ color: frigateMuted }} />
               <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Prompt-to-Output Map</span>
             </div>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, marginBottom: 16 }}>
+              Frigate breaks the run into visible steering layers. The strongest segments usually place the subject, look, and layout first, while lighter segments tune the finish.
+            </p>
             <div className="flex flex-wrap gap-3">
               {segments.length > 0 ? (
                 segments.map((segment, index) => (
@@ -400,12 +510,12 @@ export function ComposerPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, ease, delay: 0.1 + index * 0.05 }}
                   >
-                    {segment.text}
+                    {segment.label}
                     <span style={{ ...mono, fontSize: 9, marginLeft: 8, opacity: 0.6 }}>{Math.round(segment.influence * 100)}%</span>
                   </motion.button>
                 ))
               ) : (
-                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Generate once to see mapped prompt influence.</span>
+                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>The prompt map appears after the first run.</span>
               )}
             </div>
           </motion.div>
@@ -415,7 +525,7 @@ export function ComposerPage() {
               <div>
                 <div style={{ ...mono, fontSize: 10, color: frigateMuted, marginBottom: 6 }}>Generated Result</div>
                 <div style={{ fontFamily: "Inter, sans-serif", fontSize: 17, fontWeight: 700, color: frigateText }}>
-                  {mode === "image" ? "Visual output preview" : "Written output preview"}
+                  {mode === "image" ? "Visual output with influence heatmap" : "Written output preview"}
                 </div>
               </div>
               {result && (
@@ -457,7 +567,7 @@ export function ComposerPage() {
                     transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                   />
                   <span style={{ ...mono, fontSize: 10, color: frigateMuted, marginTop: 16 }}>
-                    Generating with {mode === "image" ? "Pollinations" : "Replicate"}...
+                    Building with {mode === "image" ? "Pollinations" : "Replicate"}...
                   </span>
                 </motion.div>
               ) : error ? (
@@ -474,31 +584,20 @@ export function ComposerPage() {
               ) : result ? (
                 <motion.div key="output" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease }}>
                   {mode === "image" ? (
-                    <div className="relative mb-5 w-full overflow-hidden" style={{ backgroundColor: "#1C1E19", aspectRatio: "16/10", border: "1px solid #9C9C9C10" }}>
-                      <img src={result.output} alt={prompt} className="absolute inset-0 h-full w-full object-cover" />
-                      <AnimatePresence>
-                        {activeSegment !== null && segments[activeSegment] && (
-                          <motion.div
-                            className="absolute inset-0"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 0.45 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            style={{
-                              background: `radial-gradient(ellipse at ${20 + activeSegment * 15}% ${30 + activeSegment * 10}%, ${segments[activeSegment].color}50 0%, transparent 55%)`,
-                            }}
-                          />
-                        )}
-                      </AnimatePresence>
-                      <div className="absolute bottom-4 left-4">
-                        <span style={{ ...mono, fontSize: 10, color: "#FFFFED", backgroundColor: "#050505cc", padding: "5px 10px" }}>
+                    <div className="mb-5">
+                      <div className="relative w-full overflow-hidden" style={{ backgroundColor: "#1C1E19", aspectRatio: "16/10", border: "1px solid #9C9C9C10" }}>
+                        <img src={result.output} alt={prompt || "Generated Frigate visual"} className="absolute inset-0 h-full w-full object-cover" />
+                        <ImageGenerationHeatmap segments={segments} activeIndex={activeSegment} />
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span style={{ ...mono, fontSize: 10, color: frigateMuted, backgroundColor: "#F2F1E8", padding: "6px 10px" }}>
                           {result.provider} | live image
                         </span>
-                      </div>
-                      <div className="absolute top-4 right-4">
-                        <span style={{ ...mono, fontSize: 10, color: "#1A3D1A", backgroundColor: "#D1FF00", padding: "5px 10px" }}>
-                          Overlay Live
-                        </span>
+                        {referenceImage?.name ? (
+                          <span style={{ ...mono, fontSize: 10, color: "#1A3D1A", backgroundColor: "#D1FF0018", padding: "6px 10px" }}>
+                            ref anchor | {referenceImage.name}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   ) : (
@@ -522,7 +621,7 @@ export function ComposerPage() {
                   animate={{ opacity: 1 }}
                 >
                   <Sparkles size={20} style={{ color: frigateMuted, marginBottom: 10, opacity: 0.25 }} />
-                  <p style={{ ...mono, fontSize: 10, color: frigateMuted }}>Add a prompt to start the explainable generation loop</p>
+                  <p style={{ ...mono, fontSize: 10, color: frigateMuted }}>Your next run will render here with its explanation layer.</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -545,6 +644,18 @@ export function ComposerPage() {
           <div className="flex-1 overflow-y-auto" style={{ padding: "18px 20px" }}>
             {activePanel === "explain" && (
               <div className="flex flex-col gap-4">
+                {result?.explanation_summary ? (
+                  <div className="p-4" style={{ border: "1px solid #00000010", backgroundColor: "#F9F8EF" }}>
+                    <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 10 }}>How This Run Was Composed</div>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, marginBottom: 10 }}>
+                      {result.explanation_summary.overview}
+                    </p>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, margin: 0 }}>
+                      {result.explanation_summary.segment_strategy}
+                    </p>
+                  </div>
+                ) : null}
+
                 {segments.length > 0 ? (
                   segments.map((segment, index) => (
                     <motion.div
@@ -563,10 +674,14 @@ export function ComposerPage() {
                     >
                       <div className="mb-2 flex items-center gap-2">
                         <div style={{ width: 8, height: 8, backgroundColor: segment.color }} />
-                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 15, fontWeight: 700, color: frigateText }}>"{segment.text}"</span>
+                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 15, fontWeight: 700, color: frigateText }}>{segment.label}</span>
                       </div>
+                      <div style={{ ...mono, fontSize: 9, color: "#1A3D1A", marginBottom: 8 }}>{segment.kind}</div>
+                      <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateText, marginBottom: 8 }}>
+                        {segment.text}
+                      </p>
                       <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "168%", color: frigateMuted }}>
-                        {buildExplanationText(segment.text, segment.influence, mode)}
+                        {buildExplanationText(segment, mode)}
                       </p>
                       <div className="mt-2">
                         <span style={{ ...mono, fontSize: 9, color: frigateMuted }}>Influence: {Math.round(segment.influence * 100)}%</span>
@@ -575,7 +690,7 @@ export function ComposerPage() {
                   ))
                 ) : (
                   <div className="p-4" style={{ border: "1px solid #00000010" }}>
-                    <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>No mapping yet.</span>
+                    <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>The explanation layer will populate after a run.</span>
                   </div>
                 )}
 
@@ -601,7 +716,7 @@ export function ComposerPage() {
                     <ConfidenceMeter value={result?.session.trust_score || 0} label="Overall Confidence" />
                     <ConfidenceMeter value={result?.session.clarity_score || 0} label="Prompt Clarity" />
                     <ConfidenceMeter value={result?.session.quality_score || 0} label="Output Quality" />
-                    <ConfidenceMeter value={Math.min(98, (result?.mapping.length || 0) * 16)} label="Edit Efficiency" />
+                    <ConfidenceMeter value={Math.min(98, (result?.segments.length || result?.mapping.length || 0) * 16)} label="Edit Efficiency" />
                   </div>
                 </div>
 
@@ -610,7 +725,7 @@ export function ComposerPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { label: "Tokens Used", value: `${result?.tokens.length || 0}` },
-                      { label: "Tracked Segments", value: `${segments.length}` },
+                      { label: "Tracked Segments", value: `${result?.segments.length || segments.length}` },
                       { label: "Provider", value: result?.provider || "idle" },
                       { label: "Latency", value: result ? `${Math.round(result.session.response_time_ms)}ms` : "0ms" },
                     ].map((tile) => (

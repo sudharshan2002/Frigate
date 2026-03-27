@@ -1,0 +1,37 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.6.2
+2 info using node@v24.11.1
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\USER\Documents\frigate\packages\frigate\.npmrc
+5 silly config load:file:C:\Users\USER\.npmrc
+6 silly config load:file:C:\Users\USER\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm pack
+8 verbose argv "pack" "--dry-run" "--cache" ".npm-cache"
+9 verbose logfile logs-max:10 dir:C:\Users\USER\Documents\frigate\packages\frigate\.npm-cache\_logs\2026-03-27T03_27_33_801Z-
+10 verbose logfile C:\Users\USER\Documents\frigate\packages\frigate\.npm-cache\_logs\2026-03-27T03_27_33_801Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 notice
+14 notice package: frigate-sdk@0.1.0
+15 notice Tarball Contents
+16 notice 1.1kB README.md
+16 notice 614B package.json
+16 notice 4.3kB src/cli.js
+16 notice 4.7kB src/index.d.ts
+16 notice 3.9kB src/index.js
+17 notice Tarball Details
+18 notice name: frigate-sdk
+19 notice version: 0.1.0
+20 notice filename: frigate-sdk-0.1.0.tgz
+21 notice package size: 4.4 kB
+22 notice unpacked size: 14.6 kB
+23 notice shasum: fa74fc2c2d35a42164b8879cf30a7a8413af6b05
+24 notice integrity: sha512-Nlz8KEFy39LEp[...]5Jq9uj1TCCimA==
+25 notice total files: 5
+26 notice
+27 verbose cwd C:\Users\USER\Documents\frigate\packages\frigate
+28 verbose os Windows_NT 10.0.26200
+29 verbose node v24.11.1
+30 verbose npm  v11.6.2
+31 verbose exit 0
+32 info ok

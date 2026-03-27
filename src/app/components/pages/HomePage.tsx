@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type ReactNode } from "react";
-import { motion, useScroll, useTransform, useMotionTemplate, useSpring, AnimatePresence } from "motion/react";
+import { motion, useScroll, useTransform, useMotionTemplate, useSpring, AnimatePresence, useReducedMotion } from "motion/react";
 import { useNavigate } from "react-router";
 import { AnimatedHeadline, FadeIn } from "../AnimatedText";
 import { GrainLocal } from "../GrainOverlay";
@@ -80,10 +80,32 @@ function LogoBar() {
 function Hero() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <section className="relative w-full overflow-hidden" ref={heroRef} style={{ backgroundColor: "#060606", minHeight: "100vh" }}>
       <GrainLocal opacity={0.16} />
+
+      <motion.div
+        className="pointer-events-none absolute left-[-8vw] top-[10vh] z-0 h-[36rem] w-[36rem] rounded-full"
+        style={{
+          background: "radial-gradient(circle, rgba(209,255,0,0.16) 0%, rgba(209,255,0,0.06) 32%, rgba(209,255,0,0) 72%)",
+          filter: "blur(12px)",
+        }}
+        animate={
+          prefersReducedMotion
+            ? undefined
+            : { x: [0, 24, -12, 0], y: [0, -16, 12, 0], scale: [1, 1.08, 0.97, 1], opacity: [0.52, 0.7, 0.45, 0.52] }
+        }
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <motion.div
+        className="pointer-events-none absolute inset-x-[14%] top-[18vh] z-0 h-px"
+        style={{ background: "linear-gradient(90deg, rgba(209,255,0,0) 0%, rgba(209,255,0,0.55) 50%, rgba(209,255,0,0) 100%)" }}
+        animate={prefersReducedMotion ? undefined : { opacity: [0.15, 0.75, 0.15], scaleX: [0.92, 1, 0.95] }}
+        transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+      />
 
       {/* Grid Overlay */}
       <div
@@ -119,12 +141,15 @@ function Hero() {
         className="relative z-10 mx-auto grid grid-cols-1 md:grid-cols-4 h-full"
         style={{
           maxWidth: 1920,
-          padding: "clamp(160px, 22vh, 240px) clamp(20px, 3vw, 48px) clamp(80px, 10vh, 120px)",
+          padding: "clamp(128px, 16vh, 200px) clamp(20px, 3vw, 48px) clamp(72px, 9vh, 112px)",
           minHeight: "100vh"
         }}
       >
         {/* Main Content: Spans Col 1, 2, and 3 */}
-        <div className="col-span-1 md:col-span-3 flex flex-col justify-center z-10">
+        <div
+          className="col-span-1 md:col-span-3 flex flex-col justify-start z-10"
+          style={{ paddingTop: "clamp(0px, 1.5vh, 18px)" }}
+        >
 
           <FadeIn delay={1.4}>
             <div
@@ -206,45 +231,95 @@ function Hero() {
           </FadeIn>
 
           {/* Button: Exactly 1/3 of the 3-column span = exactly width of Column 1 */}
-          <FadeIn delay={2.1} className="w-full sm:w-auto md:w-1/3 relative bg-[#0b0b0b]">
-            <button
-              onClick={() => navigate("/composer")}
-              className="cursor-pointer group flex items-center justify-between relative"
-              style={{
-                width: "100%", // Exactly matches the width of Col 1
-                minHeight: "75px",
-                padding: "0 28px",
-                border: "none",
-                outline: "none",
-                borderBottom: "4px solid #D1FF00",
-                backgroundColor: "transparent"
-              }}
+          <FadeIn delay={2.1} className="relative w-full sm:max-w-[28rem]">
+            <motion.div
+              className="mb-3 flex items-center gap-2"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="absolute inset-0 bg-[#D1FF00] origin-bottom transform scale-y-0 transition-transform duration-300 group-hover:scale-y-100 z-0 pointer-events-none" />
-              <span
+              <motion.span
+                className="inline-flex items-center border border-[#d1ff0044] px-3 py-1"
                 style={{
                   ...mono,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#F4F4E8",
-                  letterSpacing: "0.05em",
-                }}
-                className="relative z-10 group-hover:text-[#050505] transition-colors duration-300"
-              >
-                OPEN FRIGATE
-              </span>
-              <span
-                style={{
+                  fontSize: 10,
                   color: "#D1FF00",
-                  fontSize: 22,
-                  fontWeight: 900,
-                  marginTop: "-2px"
+                  background: "rgba(209,255,0,0.08)",
+                  boxShadow: "0 0 0 1px rgba(209,255,0,0.06) inset",
                 }}
-                className="relative z-10 group-hover:text-[#050505] transition-colors duration-300 transform group-hover:translate-x-1"
+                animate={prefersReducedMotion ? undefined : { opacity: [0.72, 1, 0.72], borderColor: ["rgba(209,255,0,0.28)", "rgba(209,255,0,0.62)", "rgba(209,255,0,0.28)"] }}
+                transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
               >
-                &gt;
+                Primary Path
+              </motion.span>
+              <span style={{ ...mono, fontSize: 10, color: "rgba(244,244,232,0.54)" }}>
+                Launch the live workspace
               </span>
-            </button>
+            </motion.div>
+
+            <motion.button
+              onClick={() => navigate("/composer")}
+              className="cursor-pointer group relative flex items-center justify-between overflow-hidden"
+              whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+              whileTap={prefersReducedMotion ? undefined : { scale: 0.988 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                width: "100%",
+                minHeight: "68px",
+                padding: "0 22px",
+                border: "1px solid #D1FF00",
+                outline: "none",
+                borderBottom: "3px solid #a8cc00",
+                background: "#D1FF00",
+              }}
+            >
+              <motion.div
+                className="pointer-events-none absolute inset-x-0 top-0 z-0 h-px"
+                style={{
+                  background: "linear-gradient(90deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.55) 50%, rgba(5,5,5,0) 100%)",
+                }}
+                animate={prefersReducedMotion ? undefined : { x: ["-110%", "120%"] }}
+                transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.4, ease: "easeInOut" }}
+              />
+              <div className="pointer-events-none absolute left-0 top-0 z-0 h-full w-[4px] bg-[#050505]" />
+              <div className="pointer-events-none absolute bottom-0 left-0 h-[3px] w-full bg-[#050505]" />
+
+              <div className="relative z-10 flex flex-col items-start gap-2">
+                <span style={{ ...mono, fontSize: 9, color: "rgba(5,5,5,0.58)" }}>
+                  Enter the composer
+                </span>
+                <span
+                  style={{
+                    ...mono,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#050505",
+                    letterSpacing: "0.08em",
+                  }}
+                  className="transition-colors duration-300"
+                >
+                  OPEN FRIGATE
+                </span>
+              </div>
+
+              <div className="relative z-10 flex items-center gap-5">
+                <div className="h-8 w-px bg-[rgba(5,5,5,0.18)]" />
+                <motion.span
+                  style={{
+                    color: "#050505",
+                    fontSize: 20,
+                    fontWeight: 900,
+                    marginTop: "-2px"
+                  }}
+                  animate={prefersReducedMotion ? undefined : { x: [0, 3, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  &gt;
+                </motion.span>
+              </div>
+
+              <div className="absolute inset-0 bg-[rgba(5,5,5,0.06)] opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-[1] pointer-events-none" />
+            </motion.button>
           </FadeIn>
 
         </div>
@@ -252,7 +327,7 @@ function Hero() {
         {/* Column 4: Side explainer */}
         <div className="col-span-1 md:col-span-1 flex flex-col justify-end px-0 md:pl-8 lg:pl-10 pb-8 z-10 mt-16 md:mt-0">
           <FadeIn delay={2.2}>
-            <div
+            <motion.div
               style={{
                 ...mono,
                 fontSize: 10,
@@ -261,12 +336,25 @@ function Hero() {
                 marginBottom: 20,
                 textTransform: "uppercase"
               }}
+              animate={prefersReducedMotion ? undefined : { opacity: [0.78, 1, 0.78] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             >
               <span className="opacity-60">PROMPTS SHOULD BE REVIEWABLE.</span> <span className="font-bold opacity-100">FRIGATE KEEPS THE DECISION PATH VISIBLE.</span>
-            </div>
+            </motion.div>
 
-            <div
+            <motion.div
               className="relative w-full overflow-hidden rounded-sm border border-[#ffffff15] bg-[#111] text-left"
+              initial={{ opacity: 0, y: 36, rotateX: 8 }}
+              animate={prefersReducedMotion ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 1, y: [0, -8, 0], rotateX: 0 }}
+              transition={
+                prefersReducedMotion
+                  ? { duration: 0.75, delay: 2.3, ease: [0.16, 1, 0.3, 1] }
+                  : {
+                      opacity: { duration: 0.75, delay: 2.3, ease: [0.16, 1, 0.3, 1] },
+                      y: { duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 2.3 },
+                      rotateX: { duration: 0.75, delay: 2.3, ease: [0.16, 1, 0.3, 1] },
+                    }
+              }
               style={{ maxWidth: 360, padding: 24 }}
             >
               <div
@@ -274,9 +362,13 @@ function Hero() {
                 style={{ background: "linear-gradient(90deg, #D1FF00 0%, rgba(209,255,0,0.12) 100%)" }}
               />
 
-              <div style={{ ...mono, fontSize: 9, color: "#F4F4E8", opacity: 0.5, marginBottom: 18 }}>
+              <motion.div
+                style={{ ...mono, fontSize: 9, color: "#F4F4E8", opacity: 0.5, marginBottom: 18 }}
+                animate={prefersReducedMotion ? undefined : { opacity: [0.38, 0.7, 0.38] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+              >
                 [Live View]
-              </div>
+              </motion.div>
 
               <div
                 style={{
@@ -347,7 +439,7 @@ function Hero() {
                 Open the workspace
                 <ArrowRight size={12} />
               </button>
-            </div>
+            </motion.div>
           </FadeIn>
         </div>
       </div>
@@ -591,8 +683,8 @@ function Manifesto() {
                 <div className="flex items-center gap-4 mt-8">
                   <div className="rounded-full bg-[#D1FF00] flex items-center justify-center font-bold text-[10px]" style={{ width: 44, height: 44, color: "#050505" }}>SR</div>
                   <div>
-                    <div style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 11, letterSpacing: "0.05em", color: "#050505", textTransform: "uppercase" }}>Frigate Platform</div>
-                    <div style={{ ...mono, fontSize: 9, color: "#050505", opacity: 0.5, marginTop: 4 }}>Product Vision</div>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 11, letterSpacing: "0.05em", color: "#050505", textTransform: "uppercase" }}>Sudharshan Ravichandran</div>
+                    <div style={{ ...mono, fontSize: 9, color: "#050505", opacity: 0.5, marginTop: 4 }}>Founder</div>
                   </div>
                 </div>
               </div>
@@ -1142,23 +1234,355 @@ function Features() {
   );
 }
 
+/* ===== SDK ===== */
+function SDKSection() {
+  const capabilities = [
+    {
+      icon: Bot,
+      eyebrow: "SDK client",
+      title: "Call Frigate from apps",
+      body: "Use one typed client for generation, what-if analysis, explainability, sessions, metrics, and dashboard reads.",
+      accent: "#D1FF00"
+    },
+    {
+      icon: Layers,
+      eyebrow: "Global CLI",
+      title: "Install once and run anywhere",
+      body: "Teams can install `frigate-sdk` globally and use the same `frigate` commands across local development, scripts, and internal tooling.",
+      accent: "#7DFFAF"
+    },
+    {
+      icon: Shield,
+      eyebrow: "Production shape",
+      title: "Simple surface area",
+      body: "Point the SDK at any Frigate backend with `FRIGATE_API_URL` or a custom `baseUrl` and keep the integration easy to explain.",
+      accent: "#7DB5FF"
+    }
+  ];
+
+  const commands = [
+    "npm install frigate-sdk",
+    "npm install -g frigate-sdk",
+    "frigate health"
+  ];
+
+  const snippet = [
+    'import { FrigateClient } from "frigate-sdk";',
+    "",
+    "const frigate = new FrigateClient({",
+    '  baseUrl: "http://127.0.0.1:8000",',
+    "});",
+    "",
+    "const run = await frigate.generate({",
+    '  prompt: "Write a launch note for Frigate.",',
+    '  mode: "text",',
+    "});",
+  ];
+
+  return (
+    <section className="relative w-full overflow-hidden" style={{ backgroundColor: "#050505" }}>
+      <GrainLocal opacity={0.12} />
+
+      <div
+        className="absolute inset-0 pointer-events-none flex justify-center z-0 mx-auto"
+        style={{ maxWidth: 1920, padding: "0 clamp(20px, 3vw, 48px)" }}
+      >
+        <div className="w-full h-full grid grid-cols-4">
+          <div className="border-r border-[rgba(255,255,255,0.08)]" />
+          <div className="border-r border-[rgba(255,255,255,0.08)]" />
+          <div className="border-r border-[rgba(255,255,255,0.08)]" />
+          <div />
+        </div>
+      </div>
+
+      <div
+        className="relative z-10 mx-auto"
+        style={{
+          maxWidth: 1920,
+          padding: "clamp(112px, 13vw, 164px) clamp(20px, 3vw, 48px) clamp(110px, 12vw, 150px)"
+        }}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-y-10 w-full">
+          <div className="md:pr-8">
+            <BlurReveal>
+              <div
+                style={{
+                  ...mono,
+                  fontSize: 10,
+                  color: "#D1FF00",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em"
+                }}
+              >
+                [05] ABOUT THE SDK_
+              </div>
+            </BlurReveal>
+
+            <BlurReveal delay={0.08}>
+              <p
+                style={{
+                  margin: "24px 0 0 0",
+                  maxWidth: 220,
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  color: "rgba(244,244,232,0.6)"
+                }}
+              >
+                A developer-facing surface for teams that want Frigate inside products, scripts, and operational workflows.
+              </p>
+            </BlurReveal>
+          </div>
+
+          <div className="col-span-1 md:col-span-2 md:pr-10">
+            <BlurReveal delay={0.06}>
+              <div
+                style={{
+                  fontFamily: "'TASA Orbiter', Inter, sans-serif",
+                  fontWeight: 900,
+                  fontSize: "clamp(2rem, 3.35vw, 3.8rem)",
+                  lineHeight: 0.92,
+                  letterSpacing: "-0.065em",
+                  textTransform: "uppercase",
+                  color: "#F4F4E8",
+                  maxWidth: 760
+                }}
+              >
+                <div>THE FRIGATE SDK</div>
+                <div style={{ color: "#D1FF00" }}>CONNECTS PRODUCT TO PLATFORM.</div>
+              </div>
+            </BlurReveal>
+
+            <BlurReveal delay={0.14}>
+              <p
+                style={{
+                  margin: "28px 0 0 0",
+                  maxWidth: 520,
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: "clamp(1rem, 1.1vw, 1.08rem)",
+                  lineHeight: 1.55,
+                  color: "rgba(244,244,232,0.68)"
+                }}
+              >
+                Install `frigate-sdk` inside a project or globally, then call the same generation,
+                explainability, session, and dashboard APIs that power the product itself.
+              </p>
+            </BlurReveal>
+          </div>
+
+          <div className="col-span-1">
+            <FadeIn delay={0.18}>
+              <div
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                  padding: 20
+                }}
+              >
+                <div style={{ ...mono, fontSize: 10, color: "rgba(244,244,232,0.5)", marginBottom: 16 }}>
+                  Install paths
+                </div>
+                <div className="space-y-3">
+                  {commands.map((command) => (
+                    <div
+                      key={command}
+                      style={{
+                        ...mono,
+                        fontSize: 10,
+                        color: "#F4F4E8",
+                        padding: "12px 14px",
+                        border: "1px solid rgba(255,255,255,0.09)",
+                        backgroundColor: "rgba(5,5,5,0.28)"
+                      }}
+                    >
+                      {command}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full mt-[48px] md:mt-[62px]">
+          <div className="col-span-1 md:col-span-2">
+            <BlurReveal>
+              <div
+                className="relative overflow-hidden h-full"
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "linear-gradient(145deg, rgba(255,255,255,0.07) 0%, rgba(18,18,18,0.72) 100%)",
+                  padding: "clamp(22px, 2.6vw, 34px)",
+                  minHeight: 360
+                }}
+              >
+                <div
+                  className="absolute left-0 top-0 h-[3px] w-full"
+                  style={{ background: "linear-gradient(90deg, #D1FF00 0%, rgba(209,255,0,0.1) 100%)" }}
+                />
+
+                <div className="relative z-10 flex h-full flex-col">
+                  <div className="flex items-center justify-between gap-4">
+                    <div style={{ ...mono, fontSize: 10, color: "rgba(244,244,232,0.54)" }}>
+                      SDK quickstart
+                    </div>
+                    <div style={{ ...mono, fontSize: 10, color: "#D1FF00" }}>
+                      package: frigate-sdk
+                    </div>
+                  </div>
+
+                  <div
+                    className="mt-6"
+                    style={{
+                      fontFamily: "'TASA Orbiter', Inter, sans-serif",
+                      fontWeight: 800,
+                      fontSize: "clamp(1.35rem, 1.9vw, 2rem)",
+                      lineHeight: 0.96,
+                      letterSpacing: "-0.045em",
+                      color: "#F4F4E8",
+                      maxWidth: 420
+                    }}
+                  >
+                    A small client surface for the core Frigate workflow.
+                  </div>
+
+                  <div
+                    className="mt-8 flex-1"
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      backgroundColor: "rgba(0,0,0,0.32)",
+                      padding: "18px 18px 16px"
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-[9px] w-[9px] rounded-full bg-[#D1FF00]" />
+                      <div className="h-[9px] w-[9px] rounded-full bg-[#7DFFAF]" />
+                      <div className="h-[9px] w-[9px] rounded-full bg-[#7DB5FF]" />
+                    </div>
+
+                    <div className="space-y-2">
+                      {snippet.map((line, index) => (
+                        <div
+                          key={`${line}-${index}`}
+                          style={{
+                            ...mono,
+                            fontSize: 10,
+                            color: line ? "#F4F4E8" : "transparent",
+                            opacity: line ? 0.9 : 1,
+                            whiteSpace: "pre-wrap"
+                          }}
+                        >
+                          {line || "."}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </BlurReveal>
+          </div>
+
+          <div className="col-span-1 md:col-span-2 grid grid-cols-1 gap-4">
+            {capabilities.map((item, index) => {
+              const Icon = item.icon;
+
+              return (
+                <FadeIn key={item.title} delay={0.1 + index * 0.06}>
+                  <div
+                    className="relative overflow-hidden h-full"
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)",
+                      minHeight: 150,
+                      padding: "22px 22px 20px"
+                    }}
+                  >
+                    <div
+                      className="absolute left-0 top-0 h-[3px] w-full"
+                      style={{ backgroundColor: item.accent, opacity: 0.92 }}
+                    />
+
+                    <div className="flex items-start justify-between gap-5">
+                      <div
+                        className="flex h-11 w-11 items-center justify-center rounded-full"
+                        style={{
+                          border: "1px solid rgba(255,255,255,0.09)",
+                          backgroundColor: "rgba(255,255,255,0.05)"
+                        }}
+                      >
+                        <Icon size={18} strokeWidth={1.8} style={{ color: item.accent }} />
+                      </div>
+
+                      <div style={{ ...mono, fontSize: 10, color: "rgba(244,244,232,0.34)" }}>
+                        {`0${index + 1}`}
+                      </div>
+                    </div>
+
+                    <div style={{ ...mono, fontSize: 10, color: "rgba(244,244,232,0.52)", marginTop: 24 }}>
+                      {item.eyebrow}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 12,
+                        fontFamily: "'TASA Orbiter', Inter, sans-serif",
+                        fontWeight: 800,
+                        fontSize: "clamp(1.1rem, 1.35vw, 1.35rem)",
+                        lineHeight: 0.98,
+                        letterSpacing: "-0.04em",
+                        color: "#F4F4E8",
+                        maxWidth: 280
+                      }}
+                    >
+                      {item.title}
+                    </div>
+
+                    <p
+                      style={{
+                        margin: "16px 0 0 0",
+                        maxWidth: 420,
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 14,
+                        lineHeight: 1.55,
+                        color: "rgba(244,244,232,0.62)"
+                      }}
+                    >
+                      {item.body}
+                    </p>
+                  </div>
+                </FadeIn>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ===== PROCESS ===== */
 function Process() {
   const items = [
     {
       icon: Activity,
-      title: "Multimodal Pipeline",
-      body: "One system for text, image, and hybrid prompts with a consistent explanation layer across every mode."
+      title: "Multimodal input",
+      body: "Inspect text, image, and mixed prompts in one place.",
+      eyebrow: "Unified inputs",
+      detail: "Text, image, hybrid"
     },
     {
       icon: Wrench,
-      title: "Real-Time What-If",
-      body: "Compare prompt versions side by side, inspect deltas, and see exactly which phrase changed the result."
+      title: "Version diffs",
+      body: "See what changed and what it shifted, fast.",
+      eyebrow: "Prompt compare",
+      detail: "Readable deltas"
     },
     {
       icon: Headphones,
-      title: "Trust Dashboard",
-      body: "Track confidence, clarity, output quality, and satisfaction from single runs all the way up to team-level patterns."
+      title: "Trust signals",
+      body: "Track quality patterns before they turn into drift.",
+      eyebrow: "Operational view",
+      detail: "Run to team trend"
     }
   ];
 
@@ -1185,87 +1609,257 @@ function Process() {
           padding: "clamp(120px, 14vw, 180px) clamp(20px, 3vw, 48px) clamp(110px, 12vw, 150px)"
         }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-4 w-full">
-          <div className="col-span-1 md:col-span-2 flex items-end pb-12 md:pb-24 pr-0 md:pr-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-y-10 w-full">
+          <div className="col-span-1 md:col-span-2 pr-0 md:pr-12">
             <BlurReveal>
-              <div
-                style={{
-                  fontFamily: "'TASA Orbiter', Inter, sans-serif",
-                  fontWeight: 900,
-                  fontSize: "clamp(1.95rem, 3vw, 3.2rem)",
-                  lineHeight: 0.94,
-                  letterSpacing: "-0.05em",
-                  textTransform: "uppercase",
-                  maxWidth: 560
-                }}
-              >
-                  <div style={{ color: "#737373" }}>Why Teams Use</div>
-                  <div style={{ color: frigateText }}>Frigate</div>
+              <div>
+                <div
+                  className="inline-flex items-center gap-3"
+                  style={{
+                    ...mono,
+                    fontSize: 10,
+                    color: frigateMuted,
+                    padding: "9px 12px",
+                    border: "1px solid rgba(5,5,5,0.1)",
+                    backgroundColor: "rgba(255,255,255,0.55)"
+                  }}
+                >
+                  <span style={{ color: "#9A9A92" }}>[03]</span>
+                  <span>Why teams use Frigate</span>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 24,
+                    fontFamily: "'TASA Orbiter', Inter, sans-serif",
+                    fontWeight: 900,
+                    fontSize: "clamp(2rem, 3.7vw, 4rem)",
+                    lineHeight: 0.9,
+                    letterSpacing: "-0.065em",
+                    textTransform: "uppercase",
+                    maxWidth: 620
+                  }}
+                >
+                  <div style={{ color: "#787874" }}>Production control</div>
+                  <div style={{ color: frigateText }}>that stays legible.</div>
+                </div>
+
+                <p
+                  style={{
+                    margin: "22px 0 0 0",
+                    maxWidth: 420,
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: "clamp(0.98rem, 1.05vw, 1.04rem)",
+                    lineHeight: 1.46,
+                    color: frigateMuted
+                  }}
+                >
+                  Inspect changes, compare runs, and follow trust without bolting on a separate explainability layer.
+                </p>
+
+                <div className="flex flex-wrap gap-3 mt-7">
+                  {["Prompt diffs", "Trust tracking"].map((label) => (
+                    <div
+                      key={label}
+                      style={{
+                        ...mono,
+                        fontSize: 10,
+                        color: frigateText,
+                        padding: "9px 12px",
+                        border: "1px solid rgba(5,5,5,0.09)",
+                        backgroundColor: "rgba(255,255,255,0.4)"
+                      }}
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
               </div>
             </BlurReveal>
           </div>
 
-          <div className="col-span-1 md:col-span-2 flex items-end pb-12 md:pb-24">
+          <div className="col-span-1 md:col-span-2">
             <BlurReveal delay={0.08}>
               <div
+                className="relative overflow-hidden h-full"
                 style={{
-                  fontFamily: "'TASA Orbiter', Inter, sans-serif",
-                  fontWeight: 800,
-                  fontSize: "clamp(1.65rem, 2.5vw, 2.65rem)",
-                  lineHeight: 1.04,
-                  letterSpacing: "-0.04em",
-                  maxWidth: 760
+                  border: "1px solid rgba(5,5,5,0.1)",
+                  backgroundColor: "rgba(255,255,255,0.58)",
+                  minHeight: "100%",
+                  padding: "clamp(22px, 2.6vw, 32px)"
                 }}
               >
-                <div style={{ color: "#707070" }}>Frigate is designed for production workflows, not one-off demos.</div>
-                <div style={{ color: frigateText, marginTop: 4 }}>The system stays understandable as your AI stack grows.</div>
+                <div className="relative z-10 flex h-full flex-col justify-between gap-8">
+                  <div>
+                    <div style={{ ...mono, fontSize: 10, color: frigateMuted, marginBottom: 16 }}>
+                      Operating Principle
+                    </div>
+
+                    <div
+                      style={{
+                        fontFamily: "'TASA Orbiter', Inter, sans-serif",
+                        fontWeight: 800,
+                        fontSize: "clamp(1.55rem, 2.35vw, 2.55rem)",
+                        lineHeight: 0.94,
+                        letterSpacing: "-0.055em",
+                        maxWidth: 520
+                      }}
+                    >
+                      <div style={{ color: "#767671" }}>Built for live systems.</div>
+                      <div style={{ color: frigateText, marginTop: 6 }}>Still easy to read.</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {[
+                      ["01", "Inspect", "Prompt changes"],
+                      ["02", "Compare", "Outcome shifts"],
+                      ["03", "Track", "Trust signals"]
+                    ].map(([num, title, body]) => (
+                      <div
+                        key={num}
+                        style={{
+                          borderTop: "1px solid rgba(5,5,5,0.12)",
+                          paddingTop: 12
+                        }}
+                      >
+                        <div style={{ ...mono, fontSize: 10, color: "#8B8B83", marginBottom: 8 }}>{num}</div>
+                        <div
+                          style={{
+                            fontFamily: "'TASA Orbiter', Inter, sans-serif",
+                            fontWeight: 800,
+                            fontSize: "clamp(0.98rem, 1vw, 1.08rem)",
+                            lineHeight: 1,
+                            letterSpacing: "-0.035em",
+                            color: frigateText,
+                            marginBottom: 6
+                          }}
+                        >
+                          {title}
+                        </div>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 13,
+                            lineHeight: 1.35,
+                            color: frigateMuted
+                          }}
+                        >
+                          {body}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </BlurReveal>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 w-full mt-[70px] md:mt-[92px]">
-          <div className="hidden md:block" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-y-6 w-full mt-[64px] md:mt-[86px]">
+          <div className="hidden md:flex md:flex-col md:justify-between md:pr-8">
+            <FadeIn delay={0.08}>
+              <div>
+                <div style={{ ...mono, fontSize: 10, color: frigateMuted, marginBottom: 18 }}>Capabilities</div>
+                <p
+                  style={{
+                    margin: 0,
+                    maxWidth: 220,
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 14,
+                    lineHeight: 1.45,
+                    color: frigateMuted
+                  }}
+                >
+                  A tighter operating layer for teams shipping prompts at scale.
+                </p>
+              </div>
+            </FadeIn>
+          </div>
           {items.map((item, index) => {
             const Icon = item.icon;
 
             return (
               <FadeIn key={item.title} delay={0.12 + index * 0.06}>
                 <motion.div
-                  className="pt-6 md:pt-10"
+                  className="group relative overflow-hidden h-full"
                   initial={{ opacity: 0, y: 28 }}
                   whileInView={{ opacity: 1, y: 0 }}
+                  whileHover={{ y: -6 }}
                   viewport={{ once: true, amount: 0.3 }}
                   transition={{ duration: 0.8, delay: 0.14 + index * 0.07, ease: [0.16, 1, 0.3, 1] }}
+                  style={{
+                    border: "1px solid rgba(5,5,5,0.1)",
+                    backgroundColor: index === 1 ? "#F8F7EE" : "rgba(255,255,255,0.58)",
+                    minHeight: 300
+                  }}
                 >
-                  <div className="flex items-center gap-4 mb-8">
-                    <Icon size={22} strokeWidth={1.8} style={{ color: frigateText }} />
+                  <div
+                    className="absolute left-0 top-0 h-[3px] w-full origin-left scale-x-0 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100"
+                    style={{ backgroundColor: "#D1FF00" }}
+                  />
+
+                  <div className="relative z-10 flex h-full flex-col p-6 md:p-7">
+                    <div className="flex items-start justify-between gap-4">
+                      <div
+                        className="flex h-12 w-12 items-center justify-center rounded-full"
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.7)",
+                          border: "1px solid rgba(5,5,5,0.08)"
+                        }}
+                      >
+                        <Icon size={20} strokeWidth={1.8} style={{ color: frigateText }} />
+                      </div>
+                      <div style={{ ...mono, fontSize: 10, color: "#8F8F88" }}>{`0${index + 1}`}</div>
+                    </div>
+
+                    <div style={{ ...mono, fontSize: 10, color: frigateMuted, marginTop: 24 }}>
+                      {item.eyebrow}
+                    </div>
+
                     <div
                       style={{
+                        marginTop: 12,
                         fontFamily: "'TASA Orbiter', Inter, sans-serif",
                         fontWeight: 800,
-                        fontSize: "clamp(1.25rem, 1.3vw, 1.5rem)",
-                        lineHeight: 1,
-                        letterSpacing: "-0.035em",
-                        color: frigateText
+                        fontSize: "clamp(1.2rem, 1.35vw, 1.5rem)",
+                        lineHeight: 0.96,
+                        letterSpacing: "-0.04em",
+                        color: frigateText,
+                        maxWidth: 220
                       }}
                     >
                       {item.title}
                     </div>
-                  </div>
 
-                  <p
-                    style={{
-                      margin: 0,
-                      maxWidth: 330,
-                      fontFamily: "Inter, sans-serif",
-                      fontSize: "clamp(0.92rem, 0.92vw, 0.98rem)",
-                      lineHeight: 1.42,
-                      color: frigateMuted
-                    }}
-                  >
-                    {item.body}
-                  </p>
+                    <p
+                      style={{
+                        margin: "14px 0 0 0",
+                        maxWidth: 260,
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: "clamp(0.92rem, 0.95vw, 0.98rem)",
+                        lineHeight: 1.42,
+                        color: frigateMuted
+                      }}
+                    >
+                      {item.body}
+                    </p>
+
+                    <div className="mt-auto pt-6">
+                      <div
+                        style={{
+                          borderTop: "1px solid rgba(5,5,5,0.08)",
+                          paddingTop: 12,
+                          ...mono,
+                          fontSize: 10,
+                          color: "#7A7A74"
+                        }}
+                      >
+                        {item.detail}
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               </FadeIn>
             );
@@ -1521,6 +2115,7 @@ export function HomePage() {
       <Stats />
       <Problems />
       <Features />
+      <SDKSection />
       <Process />
       <Testimonial />
       <FinalCTA />

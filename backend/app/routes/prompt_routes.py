@@ -156,6 +156,15 @@ async def what_if_analysis(payload: WhatIfRequest, request: Request) -> WhatIfRe
             original_prompt=payload.original_prompt,
             modified_prompt=payload.modified_prompt,
         )
+        if payload.original_reference_image and not payload.modified_reference_image:
+            difference = f"{difference} Variant B removes the reference image anchor."
+        elif payload.modified_reference_image and not payload.original_reference_image:
+            difference = f"{difference} Variant B adds a reference image anchor."
+        elif payload.original_reference_image and payload.modified_reference_image:
+            original_name = payload.original_reference_image.name or "reference image"
+            modified_name = payload.modified_reference_image.name or "reference image"
+            if original_name != modified_name:
+                difference = f"{difference} The attached image anchor also changes from {original_name} to {modified_name}."
         if payload.mode == "image":
             original_started_at = perf_counter()
             original_result = await service.generate_image(payload.original_prompt, payload.original_reference_image)

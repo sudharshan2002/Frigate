@@ -1,0 +1,83 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Users\USER\AppData\Roaming\npm\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.5.2
+2 info using node@v24.11.1
+3 timing npm:load:whichnode Completed in 1ms
+4 timing config:load:defaults Completed in 1ms
+5 timing config:load:file:C:\Users\USER\AppData\Roaming\npm\node_modules\npm\npmrc Completed in 2ms
+6 timing config:load:builtin Completed in 2ms
+7 timing config:load:cli Completed in 2ms
+8 timing config:load:env Completed in 1ms
+9 timing config:load:file:C:\Users\USER\Documents\frigate\packages\frigate\.npmrc Completed in 0ms
+10 timing config:load:project Completed in 30ms
+11 timing config:load:file:C:\Users\USER\.npmrc Completed in 0ms
+12 timing config:load:user Completed in 0ms
+13 timing config:load:file:C:\Users\USER\AppData\Roaming\npm\etc\npmrc Completed in 1ms
+14 timing config:load:global Completed in 1ms
+15 timing config:load:setEnvs Completed in 1ms
+16 timing config:load Completed in 38ms
+17 timing npm:load:configload Completed in 38ms
+18 timing config:load:flatten Completed in 1ms
+19 timing npm:load:mkdirpcache Completed in 2ms
+20 timing npm:load:mkdirplogs Completed in 1ms
+21 verbose title npm publish
+22 verbose argv "publish" "--access" "public" "--cache" ".npm-cache"
+23 timing npm:load:setTitle Completed in 0ms
+24 timing npm:load:display Completed in 1ms
+25 verbose logfile logs-max:10 dir:C:\Users\USER\Documents\frigate\packages\frigate\.npm-cache\_logs\2026-03-27T03_31_55_206Z-
+26 verbose logfile C:\Users\USER\Documents\frigate\packages\frigate\.npm-cache\_logs\2026-03-27T03_31_55_206Z-debug-0.log
+27 timing npm:load:logFile Completed in 4ms
+28 timing npm:load:timers Completed in 0ms
+29 timing npm:load:configScope Completed in 0ms
+30 timing npm:load Completed in 61ms
+31 verbose publish [ '.' ]
+32 silly logfile done cleaning log files
+33 timing arborist:ctor Completed in 0ms
+34 warn publish npm auto-corrected some errors in your package.json when publishing.  Please run "npm pkg fix" to address these errors.
+35 warn publish errors corrected:
+35 warn publish Removed invalid "scripts"
+35 warn publish "bin[frigate]" script name was cleaned
+36 notice
+37 notice package: frigate-sdk@0.1.0
+38 notice === Tarball Contents ===
+39 notice 1.1kB README.md     
+39 notice 614B  package.json  
+39 notice 4.3kB src/cli.js    
+39 notice 4.7kB src/index.d.ts
+39 notice 3.9kB src/index.js  
+40 notice === Tarball Details ===
+41 notice name:          frigate-sdk                             
+41 notice version:       0.1.0                                   
+41 notice filename:      frigate-sdk-0.1.0.tgz                   
+41 notice package size:  4.4 kB                                  
+41 notice unpacked size: 14.6 kB                                 
+41 notice shasum:        fa74fc2c2d35a42164b8879cf30a7a8413af6b05
+41 notice integrity:     sha512-Nlz8KEFy39LEp[...]5Jq9uj1TCCimA==
+41 notice total files:   5                                       
+42 notice
+43 notice Publishing to https://registry.npmjs.org/ with tag latest and public access
+44 http fetch PUT 404 https://registry.npmjs.org/frigate-sdk 703ms
+45 timing command:publish Completed in 780ms
+46 verbose stack HttpErrorGeneral: 404 Not Found - PUT https://registry.npmjs.org/frigate-sdk - Not found
+46 verbose stack     at C:\Users\USER\AppData\Roaming\npm\node_modules\npm\node_modules\npm-registry-fetch\lib\check-response.js:95:15
+46 verbose stack     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+46 verbose stack     at async publish (C:\Users\USER\AppData\Roaming\npm\node_modules\npm\node_modules\libnpmpublish\lib\publish.js:53:15)
+46 verbose stack     at async otplease (C:\Users\USER\AppData\Roaming\npm\node_modules\npm\lib\utils\otplease.js:4:12)
+46 verbose stack     at async Publish.exec (C:\Users\USER\AppData\Roaming\npm\node_modules\npm\lib\commands\publish.js:126:7)
+46 verbose stack     at async module.exports (C:\Users\USER\AppData\Roaming\npm\node_modules\npm\lib\cli-entry.js:61:5)
+47 verbose statusCode 404
+48 verbose pkgid frigate-sdk@0.1.0
+49 verbose cwd C:\Users\USER\Documents\frigate\packages\frigate
+50 verbose Windows_NT 10.0.26200
+51 verbose node v24.11.1
+52 verbose npm  v10.5.2
+53 error code E404
+54 error 404 Not Found - PUT https://registry.npmjs.org/frigate-sdk - Not found
+55 error 404
+56 error 404  'frigate-sdk@0.1.0' is not in this registry.
+57 error 404
+57 error 404 Note that you can also install from a
+58 error 404 tarball, folder, http url, or git url.
+59 verbose exit 1
+60 timing npm Completed in 1382ms
+61 verbose code 1
+62 error A complete log of this run can be found in: C:\Users\USER\Documents\frigate\packages\frigate\.npm-cache\_logs\2026-03-27T03_31_55_206Z-debug-0.log

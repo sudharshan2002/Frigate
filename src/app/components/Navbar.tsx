@@ -20,6 +20,10 @@ type MenuTarget = {
   hash?: string;
 };
 
+type MenuAction =
+  | { type: "route"; target: MenuTarget }
+  | { type: "href"; href: string };
+
 type MenuPhase = "closed" | "opening" | "open" | "closing";
 
 const menuLinks: MenuTarget[] = [
@@ -30,11 +34,19 @@ const menuLinks: MenuTarget[] = [
   { label: "CONTACT", path: "/contact" },
 ];
 
-const contactLinks = [
-  { num: "1.0", label: "EMAIL PRODUCT TEAM", href: "mailto:hello@frigate.ai" },
-  { num: "1.1", label: "OPEN CONTACT PAGE", href: "/contact" },
-  { num: "1.2", label: "PRIVACY POLICY", href: "/legal/privacy-policy" },
-  { num: "1.3", label: "TERMS & CONDITIONS", href: "/legal/terms-conditions" },
+const contactLinks: Array<{ num: string; label: string; action: MenuAction }> = [
+  { num: "1.0", label: "EMAIL PRODUCT TEAM", action: { type: "href", href: "mailto:hello@frigate.ai" } },
+  { num: "1.1", label: "OPEN CONTACT PAGE", action: { type: "route", target: { label: "CONTACT", path: "/contact" } } },
+  {
+    num: "1.2",
+    label: "PRIVACY POLICY",
+    action: { type: "route", target: { label: "PRIVACY POLICY", path: "/legal/privacy-policy" } },
+  },
+  {
+    num: "1.3",
+    label: "TERMS & CONDITIONS",
+    action: { type: "route", target: { label: "TERMS & CONDITIONS", path: "/legal/terms-conditions" } },
+  },
 ];
 
 const utilityLinks: MenuTarget[] = [
@@ -126,18 +138,19 @@ function RollingNavLink({
 function HighlightGlitchLink({
   num,
   label,
-  href,
+  onClick,
   delay,
 }: {
   num: string;
   label: string;
-  href: string;
+  onClick: () => void;
   delay: number;
 }) {
   return (
-    <motion.a
-      href={href}
-      className="menu-glitch-link"
+    <motion.button
+      type="button"
+      onClick={onClick}
+      className="menu-glitch-link border-none bg-transparent p-0 text-left"
       style={{ ...mono, fontSize: 11, color: "#050505", textDecoration: "none" }}
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
@@ -149,7 +162,7 @@ function HighlightGlitchLink({
           {label}
         </span>
       </span>
-    </motion.a>
+    </motion.button>
   );
 }
 
@@ -249,6 +262,15 @@ export function Navbar() {
     navigate(target.hash ? `${target.path}${target.hash}` : target.path);
   };
 
+  const runAction = (action: MenuAction) => {
+    if (action.type === "route") {
+      navigateTo(action.target);
+      return;
+    }
+
+    window.location.href = action.href;
+  };
+
   const isActiveTarget = (target: MenuTarget) =>
     location.pathname === target.path && (target.hash ? location.hash === target.hash : location.hash === "");
 
@@ -266,7 +288,7 @@ export function Navbar() {
     schedule(() => setWipeActive(false), WIPE_TOTAL_MS);
   };
 
-  const closeMenu = (target?: MenuTarget) => {
+  const closeMenu = (action?: MenuAction) => {
     if (menuPhase === "closed" || menuPhase === "closing") {
       return;
     }
@@ -277,8 +299,8 @@ export function Navbar() {
     setWipeKey((current) => current + 1);
 
     schedule(() => {
-      if (target) {
-        navigateTo(target);
+      if (action) {
+        runAction(action);
       }
       setMenuPhase("closed");
     }, WIPE_COVER_MS);
@@ -372,7 +394,7 @@ export function Navbar() {
                 <div className="flex items-center">
                   <button
                     type="button"
-                    onClick={() => closeMenu({ label: "HOME", path: "/" })}
+                    onClick={() => closeMenu({ type: "route", target: { label: "HOME", path: "/" } })}
                     className="flex cursor-pointer items-center border-none bg-transparent"
                     style={{ padding: 0 }}
                   >
@@ -646,7 +668,7 @@ export function Navbar() {
                           label={link.label}
                           active={isActiveTarget(link)}
                           delay={0.54 + index * 0.06}
-                          onClick={() => closeMenu(link)}
+                          onClick={() => closeMenu({ type: "route", target: link })}
                         />
                       ))}
                     </div>
@@ -685,7 +707,7 @@ export function Navbar() {
                             key={item.num}
                             num={item.num}
                             label={item.label}
-                            href={item.href}
+                            onClick={() => closeMenu(item.action)}
                             delay={0.68 + index * 0.05}
                           />
                         ))}
@@ -733,7 +755,7 @@ export function Navbar() {
                           num={`2.${index}`}
                           label={item.label}
                           delay={0.92 + index * 0.04}
-                          onClick={() => closeMenu(item)}
+                          onClick={() => closeMenu({ type: "route", target: item })}
                         />
                       ))}
                     </div>
@@ -744,15 +766,15 @@ export function Navbar() {
                       [Contact]
                     </div>
                     <div className="grid gap-y-1">
-                      {contactLinks.map((item, index) => (
-                        <HighlightGlitchLink
-                          key={item.num}
-                          num={item.num}
-                          label={item.label}
-                          href={item.href}
-                          delay={1.02 + index * 0.04}
-                        />
-                      ))}
+                        {contactLinks.map((item, index) => (
+                          <HighlightGlitchLink
+                            key={item.num}
+                            num={item.num}
+                            label={item.label}
+                            onClick={() => closeMenu(item.action)}
+                            delay={1.02 + index * 0.04}
+                          />
+                        ))}
                     </div>
                   </div>
                 </motion.aside>
