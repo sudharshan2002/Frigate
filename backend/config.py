@@ -1,4 +1,4 @@
-"""Configuration helpers for the backend service."""
+"""Configuration setup for the python server."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def _parse_bool(value: str | None, default: bool = False) -> bool:
 
 
 def _default_sqlite_path() -> Path:
-    """Prefer a persistent Render disk when present and writable, otherwise keep local storage in backend/."""
+    """Try to use a real disk if we have one on Render, otherwise just drop it in the folder."""
     render_disk_path = os.getenv("RENDER_DISK_PATH")
     # Fallback to local storage if RENDER_DISK_PATH is /var/data (common on Render Free Tier without a disk)
     if render_disk_path and render_disk_path != "/var/data":
@@ -30,7 +30,7 @@ def _default_sqlite_path() -> Path:
 
 @dataclass(frozen=True)
 class Settings:
-    """Application settings loaded from environment variables."""
+    """All the environment variables we need to run."""
 
     app_name: str
     api_prefix: str
@@ -57,7 +57,7 @@ class Settings:
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    """Load and cache environment-backed settings."""
+    """Grab the settings and cache them so we don't spam env reads."""
     cors_origins = os.getenv("CORS_ORIGINS", "*")
     db_path = os.getenv("SQLITE_DB_PATH", str(_default_sqlite_path()))
 

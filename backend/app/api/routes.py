@@ -1,4 +1,4 @@
-"""Central API routes for generation, explainability, metrics, and sessions."""
+"""Where all our API routes connect to the app."""
 
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ def _get_session_service(request: Request) -> SessionService:
 
 @router.post("/generate", response_model=GenerateResponse, tags=["prompt"])
 async def generate_content(payload: GenerateRequest, request: Request) -> GenerateResponse:
-    """Generate text and image outputs with explainability artifacts."""
+    """Get AI text and pictures, plus the data explaining how we got them."""
     orchestrator = _get_orchestrator(request)
 
     try:
@@ -64,7 +64,7 @@ async def generate_content(payload: GenerateRequest, request: Request) -> Genera
 
 @router.post("/analyze", response_model=AnalyzeResponse, tags=["prompt"])
 async def analyze_live(payload: AnalyzeRequest, request: Request) -> AnalyzeResponse:
-    """Perform real-time NLP segmentation for live UI feedback."""
+    """Analyze text in real time to show live feedback in the UI."""
     orchestrator = _get_orchestrator(request)
 
     try:
@@ -76,7 +76,7 @@ async def analyze_live(payload: AnalyzeRequest, request: Request) -> AnalyzeResp
 
 @router.post("/what-if", response_model=WhatIfResponse, tags=["prompt"])
 async def what_if_analysis(payload: WhatIfRequest, request: Request) -> WhatIfResponse:
-    """Summarize prompt edits and generate a richer comparison response."""
+    """Compare an old prompt to a new one and kick out a breakdown."""
     orchestrator = _get_orchestrator(request)
 
     try:
@@ -88,7 +88,7 @@ async def what_if_analysis(payload: WhatIfRequest, request: Request) -> WhatIfRe
 
 @router.post("/explain", response_model=ExplainResponse, tags=["explainability"])
 async def explain_prompt(payload: ExplainRequest, request: Request) -> ExplainResponse:
-    """Return a token-to-impact mapping for the provided prompt and output."""
+    """Map out how much each word actually affected the final output."""
     explainer = _get_explainer(request)
     segmenter = request.app.state.segmenter
 
@@ -109,7 +109,7 @@ async def explain_prompt(payload: ExplainRequest, request: Request) -> ExplainRe
 
 @router.post("/metrics", response_model=MetricCreateResponse, tags=["metrics"])
 async def create_metric(payload: MetricCreateRequest, request: Request) -> MetricCreateResponse:
-    """Store a user interaction metric entry."""
+    """Save an event when a user does something."""
     service = _get_metrics_service(request)
 
     try:
@@ -122,7 +122,7 @@ async def create_metric(payload: MetricCreateRequest, request: Request) -> Metri
 
 @router.get("/metrics", response_model=MetricSummaryResponse, tags=["metrics"])
 async def read_metrics(request: Request) -> MetricSummaryResponse:
-    """Return aggregate usage metrics."""
+    """Fetch high-level stats of how the app is being used."""
     service = _get_metrics_service(request)
 
     try:
@@ -137,7 +137,7 @@ async def read_sessions(
     request: Request,
     limit: int = Query(default=12, ge=1, le=50),
 ) -> SessionListResponse:
-    """Return recent generation sessions."""
+    """Pull the most recent stuff users have generated."""
     service = _get_session_service(request)
 
     try:
@@ -149,7 +149,7 @@ async def read_sessions(
 
 @router.get("/dashboard", response_model=DashboardMetricsResponse, tags=["sessions"])
 async def read_dashboard(request: Request) -> DashboardMetricsResponse:
-    """Return dashboard aggregates for the application UI."""
+    """Gather up all the numbers we need to show on the dashboard."""
     service = _get_session_service(request)
 
     try:

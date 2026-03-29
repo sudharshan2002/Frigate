@@ -1,4 +1,4 @@
-"""FastAPI application factory for the Frigate backend."""
+"""Main setup file for the backend API."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from config import get_settings
 
 
 def _configure_logging() -> None:
-    """Configure a simple application logger once per process."""
+    """Set up basic logging for the app."""
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -33,7 +33,7 @@ def _configure_logging() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize shared services during app startup."""
+    """Spin up all our shared services when the app starts."""
     settings = get_settings()
 
     generator = GenerationEngine(settings)
@@ -78,7 +78,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    """Create and configure the FastAPI application."""
+    """Build and configure the main FastAPI app instance."""
     _configure_logging()
     settings = get_settings()
 

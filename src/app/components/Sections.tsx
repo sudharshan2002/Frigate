@@ -20,7 +20,7 @@ const sectionLabel = (num: string, title: string) => (
   </div>
 );
 
-/* ===== MANIFESTO ===== */
+// Our central manifesto text
 export function Manifesto() {
   return (
     <section
@@ -64,7 +64,7 @@ export function Manifesto() {
   );
 }
 
-/* ===== STATS ===== */
+// Quick metrics and stats
 export function Stats() {
   const stats = [
     { value: "99.9%", label: "Mapping Precision" },
@@ -118,7 +118,7 @@ export function Stats() {
   );
 }
 
-/* ===== PROBLEM STATEMENT ===== */
+// Problem statement layout
 export function ProblemStatement() {
   const issues = [
     "Invisible prompt influence",
@@ -184,7 +184,7 @@ function TickerChip({ label }: { label: string }) {
   );
 }
 
-/* ===== ROI CALCULATOR ===== */
+// ROI calc block
 export function ROICalculator() {
   const [complexity, setComplexity] = useState(10);
   const [nodes, setNodes] = useState(15);
@@ -327,7 +327,7 @@ export function ROICalculator() {
   );
 }
 
-/* ===== SERVICES (HOW IT WORKS) ===== */
+// How it works / services list
 export function Services() {
   const [active, setActive] = useState(0);
 
@@ -509,7 +509,7 @@ export function Services() {
   );
 }
 
-/* ===== PROCESS ===== */
+// Workflow process breakdown
 export function Process() {
   const steps = [
     { num: "01", title: "Prompt Input", desc: "Feed text, images, or both into our multimodal composer." },
@@ -591,7 +591,7 @@ export function Process() {
   );
 }
 
-/* ===== POST LAUNCH ===== */
+// What happens after delivery
 export function PostLaunch() {
   return (
     <section style={{ backgroundColor: "#F4F4E8", padding: "clamp(60px, 10vw, 120px) 40px" }}>
@@ -656,7 +656,7 @@ export function PostLaunch() {
   );
 }
 
-/* ===== CUSTOMER STORY ===== */
+// Case study component
 export function CustomerStory() {
   return (
     <section style={{ backgroundColor: "#1C1E19", padding: "clamp(60px, 10vw, 120px) 40px" }}>
@@ -734,7 +734,7 @@ export function CustomerStory() {
   );
 }
 
-/* ===== TESTIMONIALS ===== */
+// Client reviews
 export function Testimonials() {
   const testimonials = [
     {
@@ -826,7 +826,7 @@ export function Testimonials() {
   );
 }
 
-/* ===== TECH STACK ===== */
+// Technology list
 export function TechStack() {
   const techs = [
     "OpenAI", "LangChain", "Make.com", "Zapier", "n8n", "Python",
@@ -882,7 +882,7 @@ export function TechStack() {
   );
 }
 
-/* ===== TEAM ===== */
+// About the team
 export function Team() {
   const members = [
     { name: "Sudharshan Ravichandran", role: "Founder & CEO", bio: "Platform Architect. Leading the vision for explainable multimodal generation." },
@@ -969,7 +969,7 @@ export function Team() {
   );
 }
 
-/* ===== PRICING ===== */
+// Pricing table
 export function Pricing() {
   const plans = [
     {
@@ -1157,7 +1157,7 @@ export function Pricing() {
   );
 }
 
-/* ===== FAQ ===== */
+// FAQ accordion components
 export function FAQ() {
   const faqs = [
     { q: "How long does a typical project take?", a: "Most projects take 2-6 weeks depending on complexity. Simple automations can be deployed in under a week, while comprehensive AI systems may take 4-8 weeks." },
@@ -1249,7 +1249,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-/* ===== CONTACT FORM ===== */
+// Default contact form
 export function ContactForm() {
   return (
     <section id="contact" style={{ backgroundColor: "#050505", padding: "clamp(60px, 10vw, 120px) 40px" }}>
@@ -1393,7 +1393,7 @@ function FormInput({
   );
 }
 
-/* ===== NEWSLETTER + FOOTER ===== */
+// Footer layout and subscription
 export function Footer() {
   const mono: React.CSSProperties = {
     fontFamily: "'Roboto Mono', monospace",

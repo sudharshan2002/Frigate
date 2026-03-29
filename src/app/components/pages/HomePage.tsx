@@ -49,7 +49,7 @@ const sectionLabel = (num: string, title: string, light = false) => (
   </div>
 );
 
-/* ===== LOGO BAR ===== */
+// Top brand logos row
 function LogoBar() {
   const logos = [
     { name: "TEXT SYSTEMS", icon: "+" },
@@ -76,7 +76,7 @@ function LogoBar() {
   );
 }
 
-/* ===== HERO ===== */
+// Hero layout
 function Hero() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
@@ -393,7 +393,7 @@ function Hero() {
   );
 }
 
-/* ===== MANIFESTO / WHO FRIGATE IS ===== */
+// Manifesto portion
 
 function ScrollRevealHeadline() {
   const container = useRef<HTMLDivElement>(null);
@@ -643,7 +643,7 @@ function Manifesto() {
   );
 }
 
-/* ===== STATS ===== */
+// Core value metrics
 const StatBar = ({ isBlack, delay }: { isBlack: boolean; delay: number }) => {
   return (
     <div className="relative w-full h-[18px] mb-[6px] overflow-hidden">
@@ -748,7 +748,7 @@ function Stats() {
   );
 }
 
-/* ===== PROBLEMS ===== */
+// Pain points and problem visualization
 function MarqueeRow({
   tags,
   direction = 1,
@@ -943,7 +943,7 @@ function Problems() {
   );
 }
 
-/* ===== SERVICES / FEATURES TIMELINE ===== */
+// Timeline of features we offer
 function Features() {
   const [activeStep, setActiveStep] = useState(0);
 
@@ -1180,7 +1180,7 @@ function Features() {
   );
 }
 
-/* ===== SDK ===== */
+// Dev tools and SDK highlight
 function SDKSection() {
   const capabilities = [
     {
@@ -1506,7 +1506,7 @@ function SDKSection() {
   );
 }
 
-/* ===== PROCESS ===== */
+// The core Frigate workflow
 function Process() {
   const items = [
     {
@@ -1816,7 +1816,7 @@ function Process() {
   );
 }
 
-/* ===== TESTIMONIAL ===== */
+// Testimonial quotes
 function Testimonial() {
   return (
     <section className="relative w-full overflow-hidden" style={{ backgroundColor: frigateLight }}>
@@ -2009,7 +2009,7 @@ function Testimonial() {
   );
 }
 
-/* ===== CTA ===== */
+// Final call-to-action bar
 function FinalCTA() {
   const navigate = useNavigate();
   return (
@@ -2052,7 +2052,7 @@ function FinalCTA() {
 
 
 
-/* ===== HOME PAGE ===== */
+// Main page assembly using the sections above
 export function HomePage() {
   return (
     <>

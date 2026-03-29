@@ -1,4 +1,4 @@
-"""Generation engine for text and image outputs."""
+"""Handles calling our AI models for both words and pictures."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ except Exception:  # pragma: no cover
 
 @dataclass(frozen=True)
 class ProviderGenerationResult:
-    """Normalized provider response payload."""
+    """Standardized chunk of data we get back when a model finishes."""
 
     output: str
     provider: str
@@ -43,7 +43,7 @@ class ProviderGenerationResult:
 
 @dataclass(frozen=True)
 class MultimodalGenerationResult:
-    """Combined text and image generation output."""
+    """Holds both text and image results together."""
 
     text: ProviderGenerationResult
     image: ProviderGenerationResult
@@ -77,7 +77,7 @@ class MultimodalGenerationResult:
 
 
 class GenerationEngine:
-    """Wrap real or fallback generation behavior behind a small interface."""
+    """Main class to run requests and handle falling back to other providers if one fails."""
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -96,7 +96,7 @@ class GenerationEngine:
         prompt: str,
         reference_image: ReferenceImageInput | None = None,
     ) -> MultimodalGenerationResult:
-        """Generate text and image outputs in parallel."""
+        """Run text and image tasks at the same time."""
         text_result, image_result = await asyncio.gather(
             self.generate_text(prompt, reference_image),
             self.generate_image(prompt, reference_image),
@@ -110,7 +110,7 @@ class GenerationEngine:
         mode: str,
         reference_image: ReferenceImageInput | None = None,
     ) -> MultimodalGenerationResult:
-        """Generate only the requested modality and return a normalized bundle."""
+        """Focus on just one type of output and package it nicely."""
         result = await self.generate_for_mode(
             prompt=prompt,
             mode=mode,
@@ -125,7 +125,7 @@ class GenerationEngine:
         mode: str,
         reference_image: ReferenceImageInput | None = None,
     ) -> ProviderGenerationResult:
-        """Generate only the requested modality."""
+        """Figure out which type we are doing and run just that."""
         if mode == "image":
             return await self.generate_image(prompt, reference_image)
         return await self.generate_text(prompt, reference_image)
@@ -135,7 +135,7 @@ class GenerationEngine:
         prompt: str,
         reference_image: ReferenceImageInput | None = None,
     ) -> ProviderGenerationResult:
-        """Generate text with HuggingFace first, then Pollinations, then Groq, then mock."""
+        """Try our main provider for text, and fall back down the list if it breaks."""
         started_at = perf_counter()
         reference_caption = await self._describe_reference_image(reference_image)
         effective_prompt = self._compose_prompt(prompt=prompt, reference_caption=reference_caption, mode="text")
@@ -184,7 +184,7 @@ class GenerationEngine:
         prompt: str,
         reference_image: ReferenceImageInput | None = None,
     ) -> ProviderGenerationResult:
-        """Generate an image through Hugging Face, then Pollinations, then fall back to mock."""
+        """Try making an image, falling back through our providers if one fails."""
         started_at = perf_counter()
         reference_caption = await self._describe_reference_image(reference_image)
         effective_prompt = self._compose_prompt(prompt=prompt, reference_caption=reference_caption, mode="image")
@@ -229,7 +229,7 @@ class GenerationEngine:
         )
 
     def _run_pollinations_text_generation(self, prompt: str) -> str:
-        """Generate text using Pollinations AI (free, no key required). Processes raw text responses."""
+        """Hit the Pollinations free text API and give back the raw result."""
         payload = {
             "model": "openai",
             "messages": [
@@ -260,7 +260,7 @@ class GenerationEngine:
         )
 
     def _run_pollinations_image_generation(self, prompt: str) -> str:
-        """Generate an image using Pollinations AI (free, no key required). Returns a data URL."""
+        """Fetch a generated image from Pollinations and package it as base64."""
         from urllib.parse import quote as url_quote
         from urllib.request import urlopen, Request as UrlRequest
 
@@ -304,7 +304,7 @@ class GenerationEngine:
         return str(content).strip()
 
     def _run_hf_chat_completion(self, prompt: str) -> str:
-        """Generate text using HuggingFace InferenceClient chat_completion with Qwen."""
+        """Get some text out of HuggingFace's Qwen model."""
         if self._hf_client is None:
             raise RuntimeError("Hugging Face client is unavailable")
 
@@ -337,7 +337,7 @@ class GenerationEngine:
         return str(content).strip()
 
     def _run_hf_text_to_image_with_model(self, prompt: str, model: str) -> str:
-        """Generate an image using HF InferenceClient with an explicitly specified model."""
+        """Ask HuggingFace to make an image with a specific model string."""
         if self._hf_client is None:
             raise RuntimeError("Hugging Face client is unavailable")
 
@@ -504,7 +504,7 @@ class GenerationEngine:
 
     @staticmethod
     def _post_raw_text(url: str, payload: dict[str, Any], *, headers: dict[str, str], timeout: int) -> str:
-        """Post JSON and return the response body as a character string."""
+        """Send JSON up to a provider and wait to get regular text back."""
         request = Request(
             url,
             data=json.dumps(payload).encode("utf-8"),
@@ -523,5 +523,5 @@ class GenerationEngine:
             raise RuntimeError(f"Text Provider request failed: {exc.reason}") from exc
 
     async def close(self) -> None:
-        """Expose a consistent shutdown hook for the app lifespan."""
+        """Clean up when everything shuts down."""
         return None

@@ -1,4 +1,4 @@
-"""Request and response schemas for the Frigate backend."""
+"""All the Pydantic models for data going in and out of the API."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class ReferenceImageInput(BaseModel):
-    """Optional reference image supplied by the user."""
+    """An image the user might upload to base the generation on."""
 
     data_url: str | None = Field(default=None, description="Base64 data URL for a locally uploaded image")
     url: str | None = Field(default=None, description="Remote URL for a reference image")
@@ -24,7 +24,7 @@ class ReferenceImageInput(BaseModel):
 
 
 class GenerateRequest(BaseModel):
-    """Input payload for explainable multimodal generation."""
+    """The data we expect when someone hits the generate endpoint."""
 
     prompt: str = Field(default="", description="User prompt text")
     mode: Literal["text", "image"] = Field(default="text")
@@ -40,13 +40,13 @@ class GenerateRequest(BaseModel):
             raise ValueError("Provide prompt text, a reference image, or both.")
         return self
 class AnalyzeRequest(BaseModel):
-    """Payload for real-time prompt analysis."""
+    """Data for live-typing analysis."""
     prompt: str = Field(..., min_length=1)
     mode: Literal["text", "image"] = Field(default="text")
 
 
 class AnalyzeResponse(BaseModel):
-    """Response for real-time prompt analysis."""
+    """What we send back after a live analysis."""
     segments: list[PromptSegment]
     explanation_summary: PromptExplanationSummary
 
