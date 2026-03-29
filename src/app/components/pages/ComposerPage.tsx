@@ -621,7 +621,7 @@ export function ComposerPage() {
                     transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                   />
                   <span style={{ ...mono, fontSize: 10, color: frigateMuted, marginTop: 16 }}>
-                    Building with {mode === "image" ? "Pollinations" : "Replicate"}...
+                    Building with Frigate Live...
                   </span>
                 </motion.div>
               ) : error ? (

@@ -30,6 +30,8 @@ export type PromptSegment = {
   kind: string;
   impact: number;
   effect: string;
+  color?: string;
+  influence?: number;
 };
 
 export type PromptExplanationSummary = {
