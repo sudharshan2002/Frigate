@@ -81,6 +81,7 @@ function Hero() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
+  const [isVideoExpanded, setIsVideoExpanded] = useState(false);
 
   return (
     <section className="relative w-full overflow-hidden" ref={heroRef} style={{ backgroundColor: "#060606", minHeight: "100vh" }}>
@@ -289,7 +290,8 @@ function Hero() {
             </motion.div>
 
             <motion.div
-              className="relative w-full overflow-hidden rounded-sm border border-[#ffffff15] bg-[#111] text-left"
+              className="relative w-full overflow-hidden rounded-sm border border-[#ffffff15] bg-[#111] text-left cursor-pointer group"
+              onClick={() => setIsVideoExpanded(true)}
               initial={{ opacity: 0, y: 36, rotateX: 8 }}
               animate={prefersReducedMotion ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 1, y: [0, -8, 0], rotateX: 0 }}
               transition={
@@ -301,94 +303,60 @@ function Hero() {
                       rotateX: { duration: 0.75, delay: 2.3, ease: [0.16, 1, 0.3, 1] },
                     }
               }
-              style={{ maxWidth: 360, padding: 24 }}
+              style={{ maxWidth: 360, padding: 0 }}
             >
-              <div
-                className="absolute top-0 left-0 h-[3px] w-full"
-                style={{ background: "linear-gradient(90deg, #D1FF00 0%, rgba(209,255,0,0.12) 100%)" }}
-              />
-
-              <motion.div
-                style={{ ...mono, fontSize: 9, color: "#F4F4E8", opacity: 0.5, marginBottom: 18 }}
-                animate={prefersReducedMotion ? undefined : { opacity: [0.38, 0.7, 0.38] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-              >
-                [Live View]
-              </motion.div>
-
-              <div
-                style={{
-                  fontFamily: "'TASA Orbiter', Inter, sans-serif",
-                  fontWeight: 900,
-                  fontSize: "clamp(1.25rem, 2vw, 1.7rem)",
-                  lineHeight: 0.95,
-                  letterSpacing: "-0.045em",
-                  textTransform: "uppercase",
-                  color: "#F4F4E8",
-                  maxWidth: 260,
-                  marginBottom: 14,
-                }}
-              >
-                One workspace for prompt, output, and trace.
-              </div>
-
-              <p
-                style={{
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: 14,
-                  lineHeight: 1.55,
-                  color: "rgba(244,244,232,0.62)",
-                  margin: "0 0 22px 0",
-                }}
-              >
-                Frigate keeps the important parts of the workflow in view: what changed, what mattered most, and how confident the team should feel about the result.
-              </p>
-
-              <div className="space-y-3">
-                <div
-                  className="flex items-start gap-3"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}
-                >
-                  <div className="mt-[5px] h-[7px] w-[7px] rounded-full bg-[#D1FF00]" />
-                  <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.7)" }}>
-                    Prompt influence stays visible at the token and segment level.
-                  </p>
+              <div className="relative aspect-[4/3] w-full bg-[#050505] transition-opacity group-hover:opacity-90">
+                <video src="https://www.w3schools.com/html/mov_bbb.mp4" autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-60" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#D1FF00] bg-[#D1FF0020] backdrop-blur-sm transition-transform group-hover:scale-110">
+                    <Play size={20} fill="#D1FF00" style={{ color: "#D1FF00", marginLeft: 4 }} />
+                  </div>
                 </div>
-
                 <div
-                  className="flex items-start gap-3"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}
-                >
-                  <div className="mt-[5px] h-[7px] w-[7px] rounded-full bg-[#7DFFAF]" />
-                  <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.7)" }}>
-                    Side-by-side comparisons make revisions easier to explain in review.
-                  </p>
-                </div>
-
-                <div
-                  className="flex items-start gap-3"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}
-                >
-                  <div className="mt-[5px] h-[7px] w-[7px] rounded-full bg-[#7DB5FF]" />
-                  <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.7)" }}>
-                    Trust, clarity, and quality signals stay attached to every run.
-                  </p>
+                  className="absolute top-0 left-0 h-[3px] w-full"
+                  style={{ background: "linear-gradient(90deg, #D1FF00 0%, rgba(209,255,0,0.12) 100%)" }}
+                />
+                <div className="absolute bottom-3 left-3 bg-[#050505cc] px-2 py-1" style={{ ...mono, fontSize: 9, color: "#D1FF00" }}>
+                  [Live View]
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => navigate("/composer")}
-                className="mt-6 inline-flex items-center gap-2 border-none bg-transparent p-0 cursor-pointer"
-                style={{ ...mono, fontSize: 10, color: "#D1FF00" }}
-              >
-                Open the workspace
-                <ArrowRight size={12} />
-              </button>
             </motion.div>
           </FadeIn>
         </div>
       </div>
+      <AnimatePresence>
+        {isVideoExpanded && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505cc] backdrop-blur-md p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            onClick={() => setIsVideoExpanded(false)}
+          >
+            <motion.div
+              className="relative w-full max-w-5xl aspect-video rounded-sm overflow-hidden bg-black border border-[#ffffff20]"
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                className="absolute top-0 left-0 h-[3px] w-full z-10"
+                style={{ background: "linear-gradient(90deg, #D1FF00 0%, rgba(209,255,0,0.12) 100%)" }}
+              />
+              <button 
+                className="absolute top-4 right-4 z-10 text-white opacity-60 hover:opacity-100 transition-opacity cursor-pointer border-none bg-transparent"
+                onClick={() => setIsVideoExpanded(false)}
+              >
+                <X size={28} />
+              </button>
+              <video src="https://www.w3schools.com/html/mov_bbb.mp4" controls autoPlay className="w-full h-full object-contain bg-black" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

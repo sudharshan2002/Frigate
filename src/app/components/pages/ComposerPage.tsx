@@ -442,7 +442,7 @@ export function ComposerPage() {
                     Live Segmentation {isAnalyzing && <span className="animate-pulse" style={{ color: "#D1FF00" }}>• Analyzing...</span>}
                   </div>
                   <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, margin: 0 }}>
-                    Frigate utilizes real-time NLP to break your draft into steering segments, ensuring structure and intent are clear before execution.
+                    Real-time prompt structure and intent tracking.
                   </p>
                 </div>
                 <span style={{ ...mono, fontSize: 10, color: isDraftDirty ? "#1A3D1A" : frigateMuted }}>
@@ -477,7 +477,7 @@ export function ComposerPage() {
                   ))}
                 </div>
               ) : (
-                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Type a prompt to populate the live segment map.</span>
+                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Awaiting prompt...</span>
               )}
             </div>
 
@@ -514,8 +514,8 @@ export function ComposerPage() {
             </div>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, marginBottom: 16 }}>
               {isDraftDirty
-                ? "These segments update as you type, so you can see which clauses are currently steering the draft the hardest."
-                : "Frigate breaks the run into visible steering layers. The strongest segments usually place the subject, look, and layout first, while lighter segments tune the finish."}
+                ? "Live segment influence preview."
+                : "Influence mapping from the last run."}
             </p>
             <div className="flex flex-wrap gap-3">
               {segments.length > 0 ? (
@@ -549,7 +549,7 @@ export function ComposerPage() {
                   </motion.button>
                 ))
               ) : (
-                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>The prompt map appears after the first run.</span>
+                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Awaiting run...</span>
               )}
             </div>
           </motion.div>
@@ -686,7 +686,7 @@ export function ComposerPage() {
                   animate={{ opacity: 1 }}
                 >
                   <Sparkles size={20} style={{ color: frigateMuted, marginBottom: 10, opacity: 0.25 }} />
-                  <p style={{ ...mono, fontSize: 10, color: frigateMuted }}>Your next run will render here with its explanation layer.</p>
+                  <p style={{ ...mono, fontSize: 10, color: frigateMuted }}>Awaiting execution...</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -757,7 +757,7 @@ export function ComposerPage() {
                   ))
                 ) : (
                   <div className="p-4" style={{ border: "1px solid #00000010" }}>
-                    <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>The explanation layer will populate after a run.</span>
+                    <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Awaiting explanation data...</span>
                   </div>
                 )}
 

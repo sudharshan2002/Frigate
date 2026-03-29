@@ -343,7 +343,7 @@ export function WhatIfPage() {
                     <div>
                       <div style={{ ...mono, fontSize: 10, color: "#686868", marginBottom: 6 }}>Live Segmentation</div>
                       <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: "160%", color: "#686868", margin: 0 }}>
-                        Each scenario is segmented while you type, so the edit delta is visible before you run the next compare.
+                        Real-time segment preview.
                       </p>
                     </div>
                     <span style={{ ...mono, fontSize: 10, color: scenario.draftDirty ? "#1A3D1A" : "#686868" }}>
@@ -369,7 +369,7 @@ export function WhatIfPage() {
                       ))}
                     </div>
                   ) : (
-                    <span style={{ ...mono, fontSize: 10, color: "#686868" }}>Type this scenario to populate the live prompt map.</span>
+                    <span style={{ ...mono, fontSize: 10, color: "#686868" }}>Awaiting scenario...</span>
                   )}
                 </div>
               </div>
@@ -395,7 +395,7 @@ export function WhatIfPage() {
                       </>
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                        <span style={{ ...mono, fontSize: 9, color: "#686868" }}>This visual scenario will render with its heatmap after the next compare.</span>
+                        <span style={{ ...mono, fontSize: 9, color: "#686868" }}>Awaiting comparison.</span>
                       </div>
                     )}
                     <div className="absolute bottom-3 right-3">
@@ -405,7 +405,7 @@ export function WhatIfPage() {
                 ) : (
                   <div className="absolute inset-0 overflow-auto p-5">
                     <div style={{ ...mono, fontSize: 10, color: "#686868", marginBottom: 8 }}>Generated text</div>
-                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 15, lineHeight: "175%", color: "#050505", whiteSpace: "pre-wrap" }}>{scenario.session?.output || "Both text variants will appear here after the next compare."}</p>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 15, lineHeight: "175%", color: "#050505", whiteSpace: "pre-wrap" }}>{scenario.session?.output || "Awaiting comparison."}</p>
                   </div>
                 )}
               </div>
@@ -461,7 +461,7 @@ export function WhatIfPage() {
                   li: ({node, ...props}) => <li style={{ color: "#686868", fontSize: 14, lineHeight: "1.7", marginBottom: 8 }} {...props} />
                 }}
               >
-                {result?.difference || "The next compare will show which edits shifted confidence, clarity, and visual direction."}
+                {result?.difference || "Awaiting comparison."}
               </ReactMarkdown>
             </div>
           </div>
@@ -560,13 +560,13 @@ export function WhatIfPage() {
                 title: "Highest Leverage",
                 text: result
                   ? `${Math.abs(Math.round(result.delta.clarity)) >= Math.abs(Math.round(result.delta.quality)) ? "Clarity" : "Quality"} moved the most between these variants.`
-                  : "Run a comparison to see which quality shifts the most.",
+                  : "Awaiting comparison.",
               },
               {
                 title: "Recommended Edit",
                 text: result?.delta.clarity && result.delta.clarity >= 0
                   ? "Keep the modified variant if you want the clearer prompt path."
-                  : "The original remains the steadier option unless you need a stronger change.",
+                  : "Awaiting comparison.",
               },
               {
                 title: "Predictability Score",
