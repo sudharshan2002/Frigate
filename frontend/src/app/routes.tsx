@@ -37,22 +37,6 @@ function AuthGateStatus() {
   );
 }
 
-function RequireAuth() {
-  const { isAuthenticated, loading } = useAuth();
-  const location = useLocation();
-
-  if (loading) {
-    return <AuthGateStatus />;
-  }
-
-  if (!isAuthenticated) {
-    const next = encodeURIComponent(`${location.pathname}${location.search}${location.hash}`);
-    return <Navigate to={`/login?next=${next}`} replace />;
-  }
-
-  return <Outlet />;
-}
-
 function GuestOnly() {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
@@ -76,6 +60,10 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: HomePage },
       { path: "contact", Component: ContactPage },
+      { path: "composer", Component: ComposerPage },
+      { path: "what-if", Component: WhatIfPage },
+      { path: "dashboard", Component: DashboardPage },
+      { path: "profile", Component: ProfilePage },
       { path: "auth/callback", Component: AuthCallbackPage },
       { path: "legal/acceptable-use-policy", Component: AcceptableUsePolicyPage },
       { path: "legal/privacy-policy", Component: PrivacyPolicyPage },
@@ -86,15 +74,6 @@ export const router = createBrowserRouter([
         children: [
           { path: "login", Component: LoginPage },
           { path: "signup", Component: SignupPage },
-        ],
-      },
-      {
-        Component: RequireAuth,
-        children: [
-          { path: "composer", Component: ComposerPage },
-          { path: "what-if", Component: WhatIfPage },
-          { path: "dashboard", Component: DashboardPage },
-          { path: "profile", Component: ProfilePage },
         ],
       },
       {

@@ -24,105 +24,94 @@ export function AccountPageShell({
   children: ReactNode;
 }) {
   return (
-    <section className="relative min-h-screen overflow-hidden" style={{ backgroundColor: "#F5F4E7", paddingTop: 72 }}>
+    <section className="relative min-h-screen overflow-hidden" style={{ backgroundColor: "#F3F0E6", paddingTop: 72 }}>
       <GrainLocal opacity={0.035} />
 
       <div
-        className="pointer-events-none absolute inset-0 mx-auto hidden md:grid md:grid-cols-4"
-        style={{ maxWidth: 1920, padding: "0 clamp(20px, 3vw, 48px)" }}
+        className="pointer-events-none absolute inset-x-0 top-[72px] hidden xl:block"
+        style={{ height: 1, backgroundColor: "rgba(5,5,5,0.08)" }}
       >
-        <div className="border-r border-[rgba(5,5,5,0.08)]" />
-        <div className="border-r border-[rgba(5,5,5,0.08)]" />
-        <div className="border-r border-[rgba(5,5,5,0.08)]" />
         <div />
       </div>
 
-      <motion.div
-        className="pointer-events-none absolute left-[-6rem] top-[9rem] h-[18rem] w-[18rem] rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(125,181,255,0.16) 0%, rgba(125,181,255,0.08) 34%, rgba(125,181,255,0) 76%)",
-          filter: "blur(14px)",
-        }}
-        animate={{ x: [0, 24, 0], y: [0, -18, 0], scale: [1, 1.06, 1] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      <motion.div
-        className="pointer-events-none absolute right-[-7rem] top-[12rem] h-[24rem] w-[24rem] rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(209,255,0,0.18) 0%, rgba(209,255,0,0.08) 38%, rgba(209,255,0,0) 78%)",
-          filter: "blur(16px)",
-        }}
-        animate={{ x: [0, -28, 0], y: [0, 20, 0], scale: [1, 1.04, 1] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+      <div
+        className="pointer-events-none absolute bottom-0 top-[72px] hidden xl:block"
+        style={{ left: "34%", width: 1, backgroundColor: "rgba(5,5,5,0.07)" }}
       />
 
       <div
-        className="relative z-10 mx-auto grid gap-8 md:grid-cols-4"
-        style={{ maxWidth: 1920, padding: "clamp(52px, 8vw, 92px) clamp(20px, 3vw, 48px) clamp(40px, 5vw, 72px)" }}
+        className="relative z-10 mx-auto grid gap-8"
+        style={{ maxWidth: 1480, padding: "clamp(34px, 5vw, 54px) clamp(20px, 3vw, 40px) clamp(40px, 5vw, 72px)" }}
       >
+        <div className="grid gap-8 xl:grid-cols-[minmax(260px,0.78fr)_minmax(0,1.22fr)] xl:items-end">
+          <motion.div
+            className="grid content-start gap-6 xl:pr-10"
+            initial={{ opacity: 0, y: 26 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease }}
+          >
+            <div>
+              <div
+                style={{
+                  ...mono,
+                  fontSize: 10,
+                  color: "#1A3D1A",
+                  backgroundColor: "#E8F0C6",
+                  border: "1px solid rgba(26,61,26,0.14)",
+                  display: "inline-flex",
+                  padding: "9px 12px",
+                  marginBottom: 18,
+                }}
+              >
+                {badge}
+              </div>
+
+              <h1
+                style={{
+                  fontFamily: "'TASA Orbiter', Inter, sans-serif",
+                  fontWeight: 900,
+                  fontSize: "clamp(2.2rem, 4.7vw, 4.8rem)",
+                  lineHeight: 0.9,
+                  letterSpacing: "-0.07em",
+                  color: "#050505",
+                  margin: 0,
+                  maxWidth: 620,
+                  textTransform: "uppercase",
+                }}
+              >
+                {title}
+              </h1>
+
+              <p
+                style={{
+                  margin: "18px 0 0 0",
+                  maxWidth: 440,
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 15,
+                  lineHeight: 1.65,
+                  color: "#5F5D57",
+                }}
+              >
+                {description}
+              </p>
+            </div>
+          </motion.div>
+
+          {side ? (
+            <motion.div
+              initial={{ opacity: 0, x: 22 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.72, ease, delay: 0.06 }}
+            >
+              {side}
+            </motion.div>
+          ) : null}
+        </div>
+
         <motion.div
-          className="grid content-start gap-8 md:col-span-2"
           initial={{ opacity: 0, y: 26 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease }}
-        >
-          <div>
-            <div
-              style={{
-                ...mono,
-                fontSize: 10,
-                color: "#1A3D1A",
-                backgroundColor: "#D1FF0022",
-                border: "1px solid #D1FF00",
-                display: "inline-flex",
-                padding: "9px 12px",
-                marginBottom: 24,
-              }}
-            >
-              {badge}
-            </div>
-
-            <h1
-              style={{
-                fontFamily: "'TASA Orbiter', Inter, sans-serif",
-                fontWeight: 900,
-                fontSize: "clamp(2.25rem, 5vw, 5.2rem)",
-                lineHeight: 0.9,
-                letterSpacing: "-0.07em",
-                color: "#050505",
-                margin: 0,
-                maxWidth: 760,
-                textTransform: "uppercase",
-              }}
-            >
-              {title}
-            </h1>
-
-            <p
-              style={{
-                margin: "24px 0 0 0",
-                maxWidth: 520,
-                fontFamily: "Inter, sans-serif",
-                fontSize: "clamp(1rem, 1.1vw, 1.06rem)",
-                lineHeight: 1.55,
-                color: "#686868",
-              }}
-            >
-              {description}
-            </p>
-          </div>
-
-          {side}
-        </motion.div>
-
-        <motion.div
-          className="md:col-span-2"
-          initial={{ opacity: 0, x: 22 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.72, ease, delay: 0.06 }}
+          transition={{ duration: 0.72, ease, delay: 0.1 }}
         >
           {children}
         </motion.div>
@@ -143,11 +132,10 @@ export function AccountPanel({
   return (
     <div
       style={{
-        border: dark ? "1px solid rgba(209,255,0,0.28)" : "1px solid rgba(5,5,5,0.1)",
-        background: dark
-          ? "linear-gradient(180deg, rgba(5,5,5,0.95) 0%, rgba(18,18,16,0.94) 100%)"
-          : "linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(248,247,238,0.94) 100%)",
+        border: dark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(5,5,5,0.1)",
+        backgroundColor: dark ? "#11110F" : "#FBF9F0",
         minHeight,
+        boxShadow: dark ? "0 22px 56px rgba(5,5,5,0.16)" : "0 16px 36px rgba(5,5,5,0.05)",
       }}
     >
       {children}
@@ -166,8 +154,8 @@ export function MetricTile({
     <div
       style={{
         border: "1px solid rgba(5,5,5,0.08)",
-        backgroundColor: "rgba(255,255,255,0.58)",
-        minHeight: 108,
+        backgroundColor: "#F8F6EC",
+        minHeight: 104,
         padding: 16,
       }}
     >

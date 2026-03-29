@@ -277,7 +277,9 @@ textarea {
   gap: 0.65rem;
   cursor: pointer;
   background: #050505;
-  border: 1px solid #050505;
+  border: none;
+  outline: none;
+  box-shadow: none;
   border-radius: 2px;
   padding: 11px 16px;
   transition: transform 220ms ease-out, background-color 220ms ease-out;

@@ -54,7 +54,6 @@ const contactLinks: Array<{ num: string; label: string; action: MenuAction }> = 
 const baseUtilityLinks: MenuTarget[] = [
   { label: "COMPOSER", path: "/composer" },
   { label: "WHAT-IF STUDIO", path: "/what-if" },
-  { label: "TRUST DASHBOARD", path: "/dashboard" },
   { label: "CONTACT", path: "/contact" },
 ];
 
@@ -202,12 +201,12 @@ function MiniMenuLink({
 function HeaderAccessButton({
   label,
   active,
-  emphasize = false,
+  tone = "default",
   onClick,
 }: {
   label: string;
   active: boolean;
-  emphasize?: boolean;
+  tone?: "default" | "danger";
   onClick: () => void;
 }) {
   return (
@@ -218,16 +217,21 @@ function HeaderAccessButton({
       style={{
         ...mono,
         fontSize: 9,
-        color: emphasize ? "#050505" : "#fff",
-        backgroundColor: emphasize ? "#D1FF00" : active ? "rgba(255,255,255,0.12)" : "transparent",
-        border: `1px solid ${emphasize ? "#D1FF00" : active ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.18)"}`,
+        color: tone === "danger" ? "#FFF5F5" : "#050505",
+        backgroundColor: tone === "danger" ? "#B42318" : active ? "#FFFFFF" : "#F4F4E8",
+        border: "none",
         padding: "9px 12px",
-        transition: "transform 0.22s ease-out",
+        outline: "none",
+        boxShadow: "none",
+        transition: "transform 0.22s ease-out, background-color 0.22s ease-out",
+        mixBlendMode: "normal",
       }}
       onMouseEnter={(event) => {
+        event.currentTarget.style.backgroundColor = tone === "danger" ? "#9F1F15" : active ? "#F7F7EE" : "#ECECDE";
         event.currentTarget.style.transform = "translateY(-1px)";
       }}
       onMouseLeave={(event) => {
+        event.currentTarget.style.backgroundColor = tone === "danger" ? "#B42318" : active ? "#FFFFFF" : "#F4F4E8";
         event.currentTarget.style.transform = "translateY(0)";
       }}
     >
@@ -277,7 +281,7 @@ export function Navbar() {
   const timersRef = useRef<number[]>([]);
   const menuLinks = isAuthenticated ? [...baseMenuLinks.slice(0, 4), { label: "PROFILE", path: "/profile" }, baseMenuLinks[4]] : baseMenuLinks;
   const utilityLinks = isAuthenticated
-    ? [...baseUtilityLinks.slice(0, 3), { label: "PROFILE", path: "/profile" }, baseUtilityLinks[3]]
+    ? [...baseUtilityLinks.slice(0, 2), { label: "PROFILE", path: "/profile" }, baseUtilityLinks[2]]
     : baseUtilityLinks;
 
   const menuVisible = menuPhase !== "closed";
@@ -396,7 +400,7 @@ export function Navbar() {
     <>
       <motion.header
         className="fixed left-0 right-0 top-0 z-[100]"
-        style={{ height: 72, mixBlendMode: menuVisible ? "normal" : "difference" }}
+        style={{ height: 72 }}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease, delay: 1.3 }}
@@ -410,18 +414,21 @@ export function Navbar() {
               type="button"
               onClick={() => navigate("/")}
               className="flex cursor-pointer items-center border-none bg-transparent"
-              style={{ padding: 0 }}
+              style={{ padding: 0, mixBlendMode: "normal" }}
             >
               <img src="/logo/light%20full%20logo.png" alt="Frigate Logo" style={{ height: 28, width: "auto" }} />
             </button>
           </div>
 
-          <div className="hidden flex-1 items-center justify-center gap-10 md:flex">
+          <div
+            className="hidden flex-1 items-center justify-center gap-10 md:flex"
+            style={{ mixBlendMode: menuVisible ? "normal" : "difference" }}
+          >
             <span style={{ ...mono, fontSize: 9, color: "#fff", opacity: 0.62 }}>PROMPT INTELLIGENCE PLATFORM</span>
             <span style={{ ...mono, fontSize: 9, color: "#fff", opacity: 0.4 }}>{time}</span>
           </div>
 
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-2" style={{ mixBlendMode: menuVisible ? "normal" : "difference" }}>
             <div className="hidden lg:flex items-center gap-2">
               {loading ? null : isAuthenticated ? (
                 <>
@@ -435,7 +442,7 @@ export function Navbar() {
                     active={location.pathname === "/profile"}
                     onClick={() => navigate("/profile")}
                   />
-                  <HeaderAccessButton label="Sign Out" active={false} emphasize onClick={handleSignOut} />
+                  <HeaderAccessButton label="Sign Out" active={false} tone="danger" onClick={handleSignOut} />
                 </>
               ) : (
                 <>
@@ -444,37 +451,36 @@ export function Navbar() {
                     active={location.pathname === "/login"}
                     onClick={() => navigate("/login")}
                   />
-                  <HeaderAccessButton
-                    label="Create Account"
-                    active={location.pathname === "/signup"}
-                    emphasize
-                    onClick={() => navigate("/signup")}
-                  />
+                  <HeaderAccessButton label="Create Account" active={location.pathname === "/signup"} onClick={() => navigate("/signup")} />
                 </>
               )}
             </div>
             <button
               type="button"
               onClick={menuVisible ? () => closeMenu() : openMenu}
-              className="flex cursor-pointer items-center gap-2.5"
+              className="flex cursor-pointer items-center gap-2.5 border-none"
               style={{
-                backgroundColor: "transparent",
-                border: "1px solid rgba(255,255,255,0.22)",
+                backgroundColor: "#D1FF00",
+                color: "#050505",
+                border: "none",
                 borderRadius: 4,
                 padding: "9px 14px",
-                transition: "border-color 0.22s ease-out, transform 0.22s ease-out",
+                outline: "none",
+                boxShadow: "none",
+                transition: "background-color 0.22s ease-out, transform 0.22s ease-out",
+                mixBlendMode: "normal",
               }}
               onMouseEnter={(event) => {
-                event.currentTarget.style.borderColor = "rgba(255,255,255,0.55)";
+                event.currentTarget.style.backgroundColor = "#C4F100";
                 event.currentTarget.style.transform = "translateY(-1px)";
               }}
               onMouseLeave={(event) => {
-                event.currentTarget.style.borderColor = "rgba(255,255,255,0.22)";
+                event.currentTarget.style.backgroundColor = "#D1FF00";
                 event.currentTarget.style.transform = "translateY(0)";
               }}
             >
-              {menuVisible ? <X size={16} style={{ color: "#fff" }} /> : <Menu size={16} style={{ color: "#fff" }} />}
-              <span style={{ ...mono, fontSize: 9, color: "#fff" }}>{menuVisible ? "Close" : "Menu"}</span>
+              {menuVisible ? <X size={16} style={{ color: "#050505" }} /> : <Menu size={16} style={{ color: "#050505" }} />}
+              <span style={{ ...mono, fontSize: 9, color: "#050505" }}>{menuVisible ? "Close" : "Menu"}</span>
             </button>
           </div>
         </div>
@@ -775,14 +781,9 @@ export function Navbar() {
                       {loading ? null : isAuthenticated ? (
                         <>
                           <LinkChip
-                            label="Dashboard"
-                            active={location.pathname === "/dashboard"}
-                            emphasize
-                            onClick={() => closeMenu({ type: "route", target: { label: "DASHBOARD", path: "/dashboard" } })}
-                          />
-                          <LinkChip
                             label="Profile"
                             active={location.pathname === "/profile"}
+                            emphasize
                             onClick={() => closeMenu({ type: "route", target: { label: "PROFILE", path: "/profile" } })}
                           />
                           <LinkChip

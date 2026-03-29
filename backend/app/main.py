@@ -14,6 +14,7 @@ from app.api.routes import router as api_router
 from app.services.explainer import ExplainabilityService
 from app.services.generator import GenerationEngine
 from app.services.heatmap_engine import HeatmapEngine
+from app.services.account_service import AccountService
 from app.services.metrics_engine import MetricsEngine
 from app.services.metrics_service import MetricsService
 from app.services.orchestrator import XAIOrchestrator
@@ -37,15 +38,19 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
 
     generator = GenerationEngine(settings)
+    account_service = AccountService(
+        settings.supabase_url,
+        settings.supabase_service_role_key,
+    )
     segmenter = PromptSegmenter(settings)
     explainer = ExplainabilityService(settings)
     metrics_service = MetricsService(
         settings.sqlite_db_path,
-        enabled=settings.enable_session_history,
+        enabled=False,
     )
     session_service = SessionService(
         settings.sqlite_db_path,
-        enabled=settings.enable_session_history,
+        enabled=False,
     )
     heatmap_engine = HeatmapEngine(settings)
     metrics_engine = MetricsEngine()
@@ -64,6 +69,7 @@ async def lifespan(app: FastAPI):
     app.state.settings = settings
     app.state.genai_service = generator
     app.state.generator = generator
+    app.state.account_service = account_service
     app.state.segmenter = segmenter
     app.state.explanation_service = explainer
     app.state.explainer = explainer
@@ -73,8 +79,6 @@ async def lifespan(app: FastAPI):
     app.state.whatif_engine = whatif_engine
     app.state.heatmap_engine = heatmap_engine
     app.state.orchestrator = orchestrator
-    app.state.metrics_service.init_storage()
-    app.state.session_service.init_storage()
 
     logging.getLogger(__name__).info("Backend started with prefix %s", settings.api_prefix)
     yield

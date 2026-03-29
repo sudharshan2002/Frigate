@@ -46,6 +46,7 @@ class SessionService:
                 """
                 CREATE TABLE IF NOT EXISTS sessions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    actor_key TEXT,
                     prompt TEXT NOT NULL,
                     output TEXT NOT NULL,
                     mode TEXT NOT NULL,
@@ -62,6 +63,12 @@ class SessionService:
                 )
                 """
             )
+            existing_columns = {
+                row["name"]
+                for row in connection.execute("PRAGMA table_info(sessions)").fetchall()
+            }
+            if "actor_key" not in existing_columns:
+                connection.execute("ALTER TABLE sessions ADD COLUMN actor_key TEXT")
             connection.commit()
 
     def create_session(self, payload: SessionCreate) -> SessionRecord:
@@ -73,6 +80,7 @@ class SessionService:
             cursor = connection.execute(
                 """
                 INSERT INTO sessions (
+                    actor_key,
                     prompt,
                     output,
                     mode,
@@ -87,9 +95,10 @@ class SessionService:
                     difference_summary,
                     created_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
+                    payload.actor_key,
                     payload.prompt,
                     payload.output,
                     payload.mode,
@@ -113,21 +122,23 @@ class SessionService:
 
         return self._row_to_session(row)
 
-    def list_sessions(self, limit: int = 20) -> SessionListResponse:
+    def list_sessions(self, limit: int = 20, actor_key: str | None = None) -> SessionListResponse:
         """Return the most recent stored sessions."""
         if not self.enabled:
             return SessionListResponse(sessions=[], total_runs=0, storage_bytes=0)
 
+        resolved_actor_key = actor_key or "guest:anonymous"
         capped_limit = max(1, min(limit, 50))
         with self._lock, self._connect() as connection:
             rows = connection.execute(
                 """
                 SELECT *
                 FROM sessions
+                WHERE actor_key = ?
                 ORDER BY datetime(created_at) DESC, id DESC
                 LIMIT ?
                 """,
-                (capped_limit,),
+                (resolved_actor_key, capped_limit),
             ).fetchall()
             totals = connection.execute(
                 """
@@ -135,7 +146,9 @@ class SessionService:
                     COUNT(*) AS total_runs,
                     COALESCE(SUM(LENGTH(prompt) + LENGTH(output)), 0) AS storage_bytes
                 FROM sessions
-                """
+                WHERE actor_key = ?
+                """,
+                (resolved_actor_key,),
             ).fetchone()
 
         sessions = [self._row_to_session(row) for row in rows]
@@ -145,7 +158,7 @@ class SessionService:
             storage_bytes=int(totals["storage_bytes"] or 0),
         )
 
-    def get_dashboard_metrics(self) -> DashboardMetricsResponse:
+    def get_dashboard_metrics(self, actor_key: str | None = None) -> DashboardMetricsResponse:
         """Build aggregated dashboard metrics from stored sessions and metrics logs."""
         if not self.enabled:
             return DashboardMetricsResponse(
@@ -166,13 +179,16 @@ class SessionService:
                 avg_prompt_complexity=0.0,
             )
 
+        resolved_actor_key = actor_key or "guest:anonymous"
         with self._lock, self._connect() as connection:
             rows = connection.execute(
                 """
                 SELECT *
                 FROM sessions
+                WHERE actor_key = ?
                 ORDER BY datetime(created_at) DESC, id DESC
-                """
+                """,
+                (resolved_actor_key,),
             ).fetchall()
             totals = connection.execute(
                 """
@@ -180,7 +196,9 @@ class SessionService:
                     COUNT(*) AS total_runs,
                     COALESCE(SUM(LENGTH(prompt) + LENGTH(output)), 0) AS storage_bytes
                 FROM sessions
-                """
+                WHERE actor_key = ?
+                """,
+                (resolved_actor_key,),
             ).fetchone()
             metric_summary = connection.execute(
                 """
@@ -188,7 +206,9 @@ class SessionService:
                     AVG(impact_score) AS avg_impact_score,
                     AVG(complexity_score) AS avg_prompt_complexity
                 FROM metrics
-                """
+                WHERE actor_key = ?
+                """,
+                (resolved_actor_key,),
             ).fetchone()
 
         sessions = [self._row_to_session(row) for row in rows]

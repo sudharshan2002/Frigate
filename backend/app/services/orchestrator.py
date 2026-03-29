@@ -56,7 +56,13 @@ class XAIOrchestrator:
         self.metrics_service = metrics_service
         self.session_service = session_service
 
-    async def generate(self, payload: GenerateRequest, *, request_id: str | None = None) -> GenerateResponse:
+    async def generate(
+        self,
+        payload: GenerateRequest,
+        *,
+        request_id: str | None = None,
+        actor_key: str = "guest:anonymous",
+    ) -> GenerateResponse:
         """Run the full explainable generation pipeline."""
         started_at = perf_counter()
         reference_image_used = payload.reference_image is not None
@@ -122,6 +128,7 @@ class XAIOrchestrator:
         )
         session_payload = SessionCreate(
             prompt=prompt_for_session,
+            actor_key=actor_key,
             output=primary_output,
             mode=payload.mode,
             source=payload.source,
@@ -137,6 +144,7 @@ class XAIOrchestrator:
 
         self.metrics_service.store_metric(
             MetricCreateRequest(
+                actor_key=actor_key,
                 prompt_length=len(prompt_for_session),
                 response_time_ms=total_latency_ms,
                 endpoint="/generate",
@@ -178,7 +186,13 @@ class XAIOrchestrator:
             request_id=request_id,
         )
 
-    async def compare(self, payload: WhatIfRequest, *, request_id: str | None = None) -> WhatIfResponse:
+    async def compare(
+        self,
+        payload: WhatIfRequest,
+        *,
+        request_id: str | None = None,
+        actor_key: str = "guest:anonymous",
+    ) -> WhatIfResponse:
         """Compare two prompt variants while keeping the legacy response contract."""
         difference = summarize_prompt_difference(
             original_prompt=payload.original_prompt,
@@ -256,6 +270,7 @@ class XAIOrchestrator:
         )
         original_session_payload = SessionCreate(
             prompt=original_prompt,
+            actor_key=actor_key,
             output=original_output,
             mode=payload.mode,
             source="what-if",
@@ -270,6 +285,7 @@ class XAIOrchestrator:
         )
         modified_session_payload = SessionCreate(
             prompt=modified_prompt,
+            actor_key=actor_key,
             output=modified_output,
             mode=payload.mode,
             source="what-if",
@@ -287,6 +303,7 @@ class XAIOrchestrator:
 
         self.metrics_service.store_metric(
             MetricCreateRequest(
+                actor_key=actor_key,
                 prompt_length=len(original_prompt),
                 response_time_ms=original_latency,
                 endpoint="/what-if",
@@ -298,6 +315,7 @@ class XAIOrchestrator:
         )
         self.metrics_service.store_metric(
             MetricCreateRequest(
+                actor_key=actor_key,
                 prompt_length=len(modified_prompt),
                 response_time_ms=modified_latency,
                 endpoint="/what-if",

@@ -20,8 +20,10 @@ from app.schemas import (
     DashboardMetricsResponse,
     WhatIfRequest,
     WhatIfResponse,
+    DeleteAccountResponse,
 )
 from app.services.explainer import ExplainabilityService
+from app.services.account_service import AccountService
 from app.services.metrics_service import MetricsService
 from app.services.orchestrator import XAIOrchestrator
 from app.services.session_service import SessionService
@@ -32,6 +34,11 @@ logger = logging.getLogger(__name__)
 
 def _request_id(request: Request) -> str | None:
     return getattr(request.state, "request_id", None)
+
+
+def _actor_key(request: Request) -> str:
+    header_value = request.headers.get("x-frigate-actor", "").strip()
+    return header_value or "guest:anonymous"
 
 
 def _get_orchestrator(request: Request) -> XAIOrchestrator:
@@ -50,6 +57,18 @@ def _get_session_service(request: Request) -> SessionService:
     return request.app.state.session_service
 
 
+def _get_account_service(request: Request) -> AccountService:
+    return request.app.state.account_service
+
+
+def _access_token(request: Request) -> str:
+    authorization = request.headers.get("authorization", "").strip()
+    prefix = "bearer "
+    if authorization.lower().startswith(prefix):
+        return authorization[len(prefix):].strip()
+    return ""
+
+
 def _validation_error(exc: ValueError) -> HTTPException:
     return HTTPException(status_code=400, detail=str(exc))
 
@@ -64,7 +83,11 @@ async def generate_content(payload: GenerateRequest, request: Request) -> Genera
     orchestrator = _get_orchestrator(request)
 
     try:
-        return await orchestrator.generate(payload, request_id=_request_id(request))
+        return await orchestrator.generate(
+            payload,
+            request_id=_request_id(request),
+            actor_key=_actor_key(request),
+        )
     except ValueError as exc:
         logger.info("Generation rejected: %s", exc)
         raise _validation_error(exc) from exc
@@ -94,7 +117,11 @@ async def what_if_analysis(payload: WhatIfRequest, request: Request) -> WhatIfRe
     orchestrator = _get_orchestrator(request)
 
     try:
-        return await orchestrator.compare(payload, request_id=_request_id(request))
+        return await orchestrator.compare(
+            payload,
+            request_id=_request_id(request),
+            actor_key=_actor_key(request),
+        )
     except ValueError as exc:
         logger.info("What-if analysis rejected: %s", exc)
         raise _validation_error(exc) from exc
@@ -133,7 +160,7 @@ async def create_metric(payload: MetricCreateRequest, request: Request) -> Metri
     service = _get_metrics_service(request)
 
     try:
-        record_id = service.store_metric(payload)
+        record_id = service.store_metric(payload.model_copy(update={"actor_key": payload.actor_key or _actor_key(request)}))
         return MetricCreateResponse(status="stored", record_id=record_id)
     except ValueError as exc:
         logger.info("Metric storage rejected: %s", exc)
@@ -149,7 +176,7 @@ async def read_metrics(request: Request) -> MetricSummaryResponse:
     service = _get_metrics_service(request)
 
     try:
-        return service.get_summary()
+        return service.get_summary(actor_key=_actor_key(request))
     except Exception as exc:  # pragma: no cover - defensive API guard
         logger.exception("Metrics summary failed")
         raise _internal_error("Metrics summary failed. Please try again.") from exc
@@ -164,7 +191,7 @@ async def read_sessions(
     service = _get_session_service(request)
 
     try:
-        return service.list_sessions(limit=limit)
+        return service.list_sessions(limit=limit, actor_key=_actor_key(request))
     except Exception as exc:  # pragma: no cover - defensive API guard
         logger.exception("Session history failed")
         raise _internal_error("Session history failed. Please try again.") from exc
@@ -176,7 +203,28 @@ async def read_dashboard(request: Request) -> DashboardMetricsResponse:
     service = _get_session_service(request)
 
     try:
-        return service.get_dashboard_metrics()
+        return service.get_dashboard_metrics(actor_key=_actor_key(request))
     except Exception as exc:  # pragma: no cover - defensive API guard
         logger.exception("Dashboard metrics failed")
         raise _internal_error("Dashboard metrics failed. Please try again.") from exc
+
+
+@router.delete("/account", response_model=DeleteAccountResponse, tags=["account"])
+async def delete_account(request: Request) -> DeleteAccountResponse:
+    """Delete the currently signed-in Supabase account."""
+    service = _get_account_service(request)
+    access_token = _access_token(request)
+
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Missing bearer token.")
+
+    try:
+        user_id = service.delete_current_user(access_token)
+        return DeleteAccountResponse(status="deleted", user_id=user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - defensive API guard
+        logger.exception("Account deletion failed")
+        raise _internal_error("Account deletion failed. Please try again.") from exc

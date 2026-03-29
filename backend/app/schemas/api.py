@@ -100,6 +100,7 @@ class ExplainResponse(BaseModel):
 
 class SessionCreate(BaseModel):
     prompt: str = Field(default="")
+    actor_key: str = Field(default="guest:anonymous", min_length=1, max_length=128)
     output: str = Field(..., min_length=1)
     mode: Literal["text", "image"]
     source: Literal["composer", "what-if", "api"]
@@ -221,6 +222,7 @@ class WhatIfResponse(BaseModel):
 
 
 class MetricCreateRequest(BaseModel):
+    actor_key: str | None = Field(default=None, max_length=128)
     prompt_length: int = Field(..., ge=0)
     response_time_ms: float = Field(..., ge=0)
     rating: float | None = Field(default=None, ge=0, le=5)
@@ -305,3 +307,8 @@ class SessionListResponse(BaseModel):
     sessions: list[SessionRecord]
     total_runs: int
     storage_bytes: int
+
+
+class DeleteAccountResponse(BaseModel):
+    status: Literal["deleted"]
+    user_id: str = Field(..., min_length=1)

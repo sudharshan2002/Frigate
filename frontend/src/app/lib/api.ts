@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { getActorKey } from "./actor";
 
 const API_ROOT = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_ROOT}/api`;
@@ -142,8 +143,30 @@ export type SessionListResponse = ApiFallbackMeta & {
   storage_bytes: number;
 };
 
+export type DeleteAccountResponse = {
+  status: "deleted";
+  user_id: string;
+};
+
+type SupabaseSessionRow = {
+  id: number;
+  prompt: string;
+  output: string;
+  mode: GenerationMode;
+  source: GenerationSource;
+  provider: string;
+  response_time_ms: number;
+  token_count: number;
+  trust_score: number;
+  clarity_score: number;
+  quality_score: number;
+  quality_label: string;
+  difference_summary: string | null;
+  created_at: string;
+};
+
 let fallbackSessionId = 9000;
-let fallbackSessions: SessionRecord[] | null = null;
+const fallbackSessionsByActor = new Map<string, SessionRecord[]>();
 
 function isDemoModeEnabled() {
   if (["1", "true", "yes", "on"].includes(demoModeFlag)) {
@@ -165,10 +188,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
+  const actorKey = getActorKey(session?.user?.id);
 
   const response = await fetch(`${API_PREFIX}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      "X-Frigate-Actor": actorKey,
       ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
       ...(init?.headers || {}),
     },
@@ -523,12 +548,50 @@ function createFallbackSession({
   };
 }
 
-function ensureFallbackSessions() {
-  if (fallbackSessions) {
-    return fallbackSessions;
+async function resolveActorKey() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  return getActorKey(session?.user?.id);
+}
+
+function toStoredOutput(session: SessionRecord) {
+  if (session.mode === "image") {
+    return session.output.startsWith("data:image")
+      ? "Image output stored in the active run only."
+      : trimText(session.output, 480);
   }
 
-  fallbackSessions = [
+  return trimText(session.output, 4000);
+}
+
+function fromSupabaseSession(row: SupabaseSessionRow): SessionRecord {
+  return {
+    id: Number(row.id),
+    prompt: row.prompt,
+    output: row.output,
+    mode: row.mode,
+    source: row.source,
+    provider: row.provider,
+    response_time_ms: Number(row.response_time_ms),
+    token_count: Number(row.token_count),
+    trust_score: Number(row.trust_score),
+    clarity_score: Number(row.clarity_score),
+    quality_score: Number(row.quality_score),
+    quality_label: row.quality_label,
+    difference_summary: row.difference_summary,
+    created_at: row.created_at,
+  };
+}
+
+function ensureFallbackSessions(actorKey: string) {
+  const existing = fallbackSessionsByActor.get(actorKey);
+  if (existing) {
+    return existing;
+  }
+
+  const seededSessions = [
     createFallbackSession({
       prompt: "Design a Frigate launch hero with prompt mapping overlays and a calm cockpit mood",
       mode: "image",
@@ -556,13 +619,204 @@ function ensureFallbackSessions() {
     }),
   ];
 
-  return fallbackSessions;
+  fallbackSessionsByActor.set(actorKey, seededSessions);
+  return seededSessions;
 }
 
-function registerFallbackSession(session: SessionRecord) {
-  const sessions = ensureFallbackSessions();
+function registerFallbackSession(actorKey: string, session: SessionRecord) {
+  const sessions = ensureFallbackSessions(actorKey);
   sessions.unshift(session);
-  fallbackSessions = sessions.slice(0, 20);
+  fallbackSessionsByActor.set(actorKey, sessions.slice(0, 20));
+}
+
+async function persistSessionRecord(actorKey: string, session: SessionRecord) {
+  const { data, error } = await supabase.rpc("save_app_session", {
+    p_actor_key: actorKey,
+    p_prompt: session.prompt,
+    p_output: toStoredOutput(session),
+    p_mode: session.mode,
+    p_source: session.source,
+    p_provider: session.provider,
+    p_response_time_ms: session.response_time_ms,
+    p_token_count: session.token_count,
+    p_trust_score: session.trust_score,
+    p_clarity_score: session.clarity_score,
+    p_quality_score: session.quality_score,
+    p_quality_label: session.quality_label,
+    p_difference_summary: session.difference_summary,
+    p_created_at: session.created_at,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  return row ? fromSupabaseSession(row as SupabaseSessionRow) : null;
+}
+
+async function loadSupabaseSessions(actorKey: string, limit = 200) {
+  const { data, error } = await supabase.rpc("list_app_sessions", {
+    p_actor_key: actorKey,
+    p_limit: limit,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data as SupabaseSessionRow[] | null) || []).map(fromSupabaseSession);
+}
+
+function buildSessionsResponse(sessions: SessionRecord[], limit = 12): SessionListResponse {
+  const sliced = sessions.slice(0, limit);
+  const storageBytes = sessions.reduce((sum, session) => sum + session.prompt.length + session.output.length, 0);
+
+  return {
+    sessions: sliced,
+    total_runs: sessions.length,
+    storage_bytes: storageBytes,
+  };
+}
+
+function buildDashboardFromSessions(
+  sessions: SessionRecord[],
+  options?: {
+    fallbackMessage?: string;
+    systemMode?: "supabase" | "fallback";
+  },
+): DashboardMetricsResponse {
+  const { fallbackMessage, systemMode = "supabase" } = options || {};
+  const storageBytes = sessions.reduce((sum, session) => sum + session.prompt.length + session.output.length, 0);
+  const now = new Date();
+  const sevenDays = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(now);
+    day.setDate(now.getDate() - (6 - index));
+    return day;
+  });
+
+  if (sessions.length === 0) {
+    return {
+      avg_confidence: 0,
+      avg_clarity: 0,
+      avg_quality: 0,
+      avg_response_time: 0,
+      total_runs: 0,
+      trend: sevenDays.map((day) => ({
+        day: day.toLocaleDateString("en-US", { weekday: "short" }),
+        confidence: 0,
+        clarity: 0,
+        quality: 0,
+      })),
+      usage_today: Array.from({ length: 8 }, (_, index) => ({
+        hour: `${`${index * 3}`.padStart(2, "0")}:00`,
+        runs: 0,
+      })),
+      recent_runs: [],
+      system_status: [
+        {
+          label: "Storage",
+          value: systemMode === "supabase" ? "Supabase" : "Preview Cache",
+          status: systemMode === "supabase" ? "Ready" : "Fallback",
+        },
+        {
+          label: "Rows",
+          value: "0",
+          status: "Empty",
+        },
+      ],
+      storage_bytes: 0,
+      ...(fallbackMessage ? { isFallback: true, fallbackMessage } : {}),
+    };
+  }
+
+  const trend = sevenDays.map((day) => {
+    const key = day.toISOString().slice(0, 10);
+    const daySessions = sessions.filter((session) => session.created_at.slice(0, 10) === key);
+
+    if (daySessions.length === 0) {
+      return {
+        day: day.toLocaleDateString("en-US", { weekday: "short" }),
+        confidence: 0,
+        clarity: 0,
+        quality: 0,
+      };
+    }
+
+    return {
+      day: day.toLocaleDateString("en-US", { weekday: "short" }),
+      confidence: Number((daySessions.reduce((sum, session) => sum + session.trust_score, 0) / daySessions.length).toFixed(2)),
+      clarity: Number((daySessions.reduce((sum, session) => sum + session.clarity_score, 0) / daySessions.length).toFixed(2)),
+      quality: Number((daySessions.reduce((sum, session) => sum + session.quality_score, 0) / daySessions.length).toFixed(2)),
+    };
+  });
+
+  const usageBuckets = Array.from({ length: 8 }, (_, index) => index * 3).reduce<Record<number, number>>((acc, hour) => {
+    acc[hour] = 0;
+    return acc;
+  }, {});
+  const todayKey = now.toISOString().slice(0, 10);
+
+  for (const session of sessions) {
+    if (session.created_at.slice(0, 10) !== todayKey) {
+      continue;
+    }
+
+    const created = new Date(session.created_at);
+    const bucket = Math.floor(created.getHours() / 3) * 3;
+    usageBuckets[bucket] = (usageBuckets[bucket] || 0) + 1;
+  }
+
+  return {
+    avg_confidence: Number((sessions.reduce((sum, session) => sum + session.trust_score, 0) / sessions.length).toFixed(2)),
+    avg_clarity: Number((sessions.reduce((sum, session) => sum + session.clarity_score, 0) / sessions.length).toFixed(2)),
+    avg_quality: Number((sessions.reduce((sum, session) => sum + session.quality_score, 0) / sessions.length).toFixed(2)),
+    avg_response_time: Number((sessions.reduce((sum, session) => sum + session.response_time_ms, 0) / sessions.length).toFixed(2)),
+    total_runs: sessions.length,
+    trend,
+    usage_today: Array.from({ length: 8 }, (_, index) => {
+      const hour = index * 3;
+      return {
+        hour: `${`${hour}`.padStart(2, "0")}:00`,
+        runs: usageBuckets[hour] || 0,
+      };
+    }),
+    recent_runs: sessions.slice(0, 5).map((session) => ({
+      id: session.id,
+      prompt: session.prompt,
+      mode: session.mode,
+      provider: session.provider,
+      confidence: session.trust_score,
+      clarity: session.clarity_score,
+      quality: session.quality_score,
+      quality_label: session.quality_label,
+      created_at: session.created_at,
+    })),
+    system_status: [
+      {
+        label: "Storage",
+        value: systemMode === "supabase" ? "Supabase" : "Preview Cache",
+        status: systemMode === "supabase" ? "Connected" : "Fallback",
+      },
+      {
+        label: "Rows",
+        value: `${sessions.length}`,
+        status: "Scoped",
+      },
+      {
+        label: "Storage Used",
+        value: formatStorage(storageBytes),
+        status: systemMode === "supabase" ? "Remote" : "Local Memory",
+      },
+      {
+        label: "Latest Mode",
+        value: sessions[0].mode.toUpperCase(),
+        status: sessions[0].provider,
+      },
+    ],
+    storage_bytes: storageBytes,
+    ...(fallbackMessage ? { isFallback: true, fallbackMessage } : {}),
+  };
 }
 
 function fallbackMessageFrom(error: unknown) {
@@ -575,6 +829,7 @@ function fallbackMessageFrom(error: unknown) {
 
 function buildGenerateFallback(
   payload: { prompt: string; mode: GenerationMode; source?: GenerationSource; reference_image?: ReferenceImageInput | null },
+  actorKey: string,
   fallbackMessage: string,
 ): GenerateResponse {
   const normalizedPrompt = normalizePrompt(payload.prompt, payload.reference_image);
@@ -592,7 +847,7 @@ function buildGenerateFallback(
   });
 
   session.fallbackMessage = fallbackMessage;
-  registerFallbackSession(session);
+  registerFallbackSession(actorKey, session);
 
   return {
     output,
@@ -616,6 +871,7 @@ function buildCompareFallback(
     original_reference_image?: ReferenceImageInput | null;
     modified_reference_image?: ReferenceImageInput | null;
   },
+  actorKey: string,
   fallbackMessage: string,
 ): WhatIfResponse {
   const normalizedOriginal = normalizePrompt(payload.original_prompt, payload.original_reference_image);
@@ -650,8 +906,8 @@ function buildCompareFallback(
 
   originalSession.fallbackMessage = fallbackMessage;
   modifiedSession.fallbackMessage = fallbackMessage;
-  registerFallbackSession(modifiedSession);
-  registerFallbackSession(originalSession);
+  registerFallbackSession(actorKey, modifiedSession);
+  registerFallbackSession(actorKey, originalSession);
 
   return {
     difference,
@@ -672,83 +928,44 @@ function buildCompareFallback(
   };
 }
 
-function buildSessionsFallback(limit = 12, fallbackMessage: string): SessionListResponse {
-  const sessions = ensureFallbackSessions().slice(0, limit);
-  const storageBytes = sessions.reduce((sum, session) => sum + session.prompt.length + session.output.length, 0);
-
+function buildSessionsFallback(actorKey: string, limit = 12, fallbackMessage: string): SessionListResponse {
   return {
-    sessions,
-    total_runs: sessions.length,
-    storage_bytes: storageBytes,
+    ...buildSessionsResponse(ensureFallbackSessions(actorKey), limit),
     isFallback: true,
     fallbackMessage,
   };
 }
 
-function buildDashboardFallback(fallbackMessage: string): DashboardMetricsResponse {
-  const sessions = ensureFallbackSessions();
-  const avgConfidence = sessions.reduce((sum, session) => sum + session.trust_score, 0) / sessions.length;
-  const avgClarity = sessions.reduce((sum, session) => sum + session.clarity_score, 0) / sessions.length;
-  const avgQuality = sessions.reduce((sum, session) => sum + session.quality_score, 0) / sessions.length;
-  const avgResponse = sessions.reduce((sum, session) => sum + session.response_time_ms, 0) / sessions.length;
-  const now = new Date();
-  const trend = Array.from({ length: 7 }, (_, index) => {
-    const day = new Date(now);
-    day.setDate(now.getDate() - (6 - index));
-    const label = day.toLocaleDateString("en-US", { weekday: "short" });
-    const base = 74 + index * 1.6;
-    return {
-      day: label,
-      confidence: Number(clamp(base + 5, 68, 95).toFixed(2)),
-      clarity: Number(clamp(base + 2, 66, 94).toFixed(2)),
-      quality: Number(clamp(base + 3.5, 67, 95).toFixed(2)),
-    };
-  });
-  const usageToday = Array.from({ length: 8 }, (_, index) => ({
-    hour: `${`${index * 3}`.padStart(2, "0")}:00`,
-    runs: index === 2 ? 2 : index === 4 ? 3 : index === 5 ? 1 : 0,
-  }));
-  const storageBytes = sessions.reduce((sum, session) => sum + session.prompt.length + session.output.length, 0);
-
-  return {
-    avg_confidence: Number(avgConfidence.toFixed(2)),
-    avg_clarity: Number(avgClarity.toFixed(2)),
-    avg_quality: Number(avgQuality.toFixed(2)),
-    avg_response_time: Number(avgResponse.toFixed(2)),
-    total_runs: sessions.length,
-    trend,
-    usage_today: usageToday,
-    recent_runs: sessions.slice(0, 5).map((session) => ({
-      id: session.id,
-      prompt: session.prompt,
-      mode: session.mode,
-      provider: session.provider,
-      confidence: session.trust_score,
-      clarity: session.clarity_score,
-      quality: session.quality_score,
-      quality_label: session.quality_label,
-      created_at: session.created_at,
-    })),
-    system_status: [
-      { label: "Backend", value: "Preview Mode", status: "Fallback" },
-      { label: "Text Provider", value: "preview-text", status: "Preview" },
-      { label: "Image Provider", value: "preview-image", status: "Preview" },
-      { label: "Storage Used", value: formatStorage(storageBytes), status: "Local Memory" },
-    ],
-    storage_bytes: storageBytes,
-    isFallback: true,
+function buildDashboardFallback(actorKey: string, fallbackMessage: string): DashboardMetricsResponse {
+  return buildDashboardFromSessions(ensureFallbackSessions(actorKey), {
     fallbackMessage,
-  };
+    systemMode: "fallback",
+  });
 }
 
 export const api = {
   async generate(payload: { prompt: string; mode: GenerationMode; source?: GenerationSource; reference_image?: ReferenceImageInput | null }) {
+    const actorKey = await resolveActorKey();
+
     if (isDemoModeEnabled()) {
-      return buildGenerateFallback(payload, demoModeMessage());
+      const fallback = buildGenerateFallback(payload, actorKey, demoModeMessage());
+      try {
+        const persisted = await persistSessionRecord(actorKey, fallback.session);
+        if (persisted) {
+          fallback.session = {
+            ...fallback.session,
+            id: persisted.id,
+            created_at: persisted.created_at,
+          };
+        }
+      } catch {
+        // Keep the local fallback cache when Supabase is unavailable.
+      }
+      return fallback;
     }
 
     try {
-      return await request<GenerateResponse>("/generate", {
+      const response = await request<GenerateResponse>("/generate", {
         method: "POST",
         body: JSON.stringify({
           prompt: payload.prompt,
@@ -760,8 +977,38 @@ export const api = {
           include_heatmap: false,
         }),
       });
+
+      try {
+        const persisted = await persistSessionRecord(actorKey, response.session);
+        if (persisted) {
+          response.session = {
+            ...response.session,
+            id: persisted.id,
+            created_at: persisted.created_at,
+          };
+        } else {
+          registerFallbackSession(actorKey, response.session);
+        }
+      } catch {
+        registerFallbackSession(actorKey, response.session);
+      }
+
+      return response;
     } catch (error) {
-      return buildGenerateFallback(payload, fallbackMessageFrom(error));
+      const fallback = buildGenerateFallback(payload, actorKey, fallbackMessageFrom(error));
+      try {
+        const persisted = await persistSessionRecord(actorKey, fallback.session);
+        if (persisted) {
+          fallback.session = {
+            ...fallback.session,
+            id: persisted.id,
+            created_at: persisted.created_at,
+          };
+        }
+      } catch {
+        // Keep the local fallback cache when Supabase is unavailable.
+      }
+      return fallback;
     }
   },
   async compare(payload: {
@@ -771,12 +1018,37 @@ export const api = {
     original_reference_image?: ReferenceImageInput | null;
     modified_reference_image?: ReferenceImageInput | null;
   }) {
+    const actorKey = await resolveActorKey();
+
     if (isDemoModeEnabled()) {
-      return buildCompareFallback(payload, demoModeMessage());
+      const fallback = buildCompareFallback(payload, actorKey, demoModeMessage());
+      try {
+        const [persistedOriginal, persistedModified] = await Promise.all([
+          persistSessionRecord(actorKey, fallback.original_session),
+          persistSessionRecord(actorKey, fallback.modified_session),
+        ]);
+        if (persistedOriginal) {
+          fallback.original_session = {
+            ...fallback.original_session,
+            id: persistedOriginal.id,
+            created_at: persistedOriginal.created_at,
+          };
+        }
+        if (persistedModified) {
+          fallback.modified_session = {
+            ...fallback.modified_session,
+            id: persistedModified.id,
+            created_at: persistedModified.created_at,
+          };
+        }
+      } catch {
+        // Keep the local fallback cache when Supabase is unavailable.
+      }
+      return fallback;
     }
 
     try {
-      return await request<WhatIfResponse>("/what-if", {
+      const response = await request<WhatIfResponse>("/what-if", {
         method: "POST",
         body: JSON.stringify({
           ...payload,
@@ -784,31 +1056,91 @@ export const api = {
           modified_reference_image: payload.modified_reference_image || null,
         }),
       });
+
+      try {
+        const [persistedOriginal, persistedModified] = await Promise.all([
+          persistSessionRecord(actorKey, response.original_session),
+          persistSessionRecord(actorKey, response.modified_session),
+        ]);
+        if (persistedOriginal) {
+          response.original_session = {
+            ...response.original_session,
+            id: persistedOriginal.id,
+            created_at: persistedOriginal.created_at,
+          };
+        }
+        if (persistedModified) {
+          response.modified_session = {
+            ...response.modified_session,
+            id: persistedModified.id,
+            created_at: persistedModified.created_at,
+          };
+        }
+      } catch {
+        registerFallbackSession(actorKey, response.original_session);
+        registerFallbackSession(actorKey, response.modified_session);
+      }
+
+      return response;
     } catch (error) {
-      return buildCompareFallback(payload, fallbackMessageFrom(error));
+      const fallback = buildCompareFallback(payload, actorKey, fallbackMessageFrom(error));
+      try {
+        const [persistedOriginal, persistedModified] = await Promise.all([
+          persistSessionRecord(actorKey, fallback.original_session),
+          persistSessionRecord(actorKey, fallback.modified_session),
+        ]);
+        if (persistedOriginal) {
+          fallback.original_session = {
+            ...fallback.original_session,
+            id: persistedOriginal.id,
+            created_at: persistedOriginal.created_at,
+          };
+        }
+        if (persistedModified) {
+          fallback.modified_session = {
+            ...fallback.modified_session,
+            id: persistedModified.id,
+            created_at: persistedModified.created_at,
+          };
+        }
+      } catch {
+        // Keep the local fallback cache when Supabase is unavailable.
+      }
+      return fallback;
     }
   },
   async dashboard() {
+    const actorKey = await resolveActorKey();
+
     if (isDemoModeEnabled()) {
-      return buildDashboardFallback(demoModeMessage());
+      return buildDashboardFallback(actorKey, demoModeMessage());
     }
 
     try {
-      return await request<DashboardMetricsResponse>("/dashboard");
+      const sessions = await loadSupabaseSessions(actorKey, 200);
+      return buildDashboardFromSessions(sessions, { systemMode: "supabase" });
     } catch (error) {
-      return buildDashboardFallback(fallbackMessageFrom(error));
+      return buildDashboardFallback(actorKey, fallbackMessageFrom(error));
     }
   },
   async sessions(limit = 12) {
+    const actorKey = await resolveActorKey();
+
     if (isDemoModeEnabled()) {
-      return buildSessionsFallback(limit, demoModeMessage());
+      return buildSessionsFallback(actorKey, limit, demoModeMessage());
     }
 
     try {
-      return await request<SessionListResponse>(`/sessions?limit=${limit}`);
+      const sessions = await loadSupabaseSessions(actorKey, Math.max(limit, 200));
+      return buildSessionsResponse(sessions, limit);
     } catch (error) {
-      return buildSessionsFallback(limit, fallbackMessageFrom(error));
+      return buildSessionsFallback(actorKey, limit, fallbackMessageFrom(error));
     }
+  },
+  async deleteAccount() {
+    return request<DeleteAccountResponse>("/account", {
+      method: "DELETE",
+    });
   },
   async analyze(payload: { prompt: string; mode: GenerationMode }) {
     if (isDemoModeEnabled()) {

@@ -5,6 +5,8 @@ import { AppPageLinks } from "./AppPageLinks";
 import { BarChart3, Clock, ArrowRight, Eye, Shield, Sparkles, Activity } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { api, formatRelativeTime, formatStorage, type DashboardMetricsResponse, type SessionListResponse } from "../../lib/api";
+import { useAuth } from "../../lib/auth";
+import { getActorDescriptor } from "../../lib/actor";
 
 const mono: React.CSSProperties = {
   fontFamily: "'Roboto Mono', monospace",
@@ -49,6 +51,7 @@ function StatCard({ icon, label, value, sub, delay = 0 }: { icon: React.ReactNod
 }
 
 export function DashboardPage() {
+  const { displayName, isAuthenticated, user } = useAuth();
   const [activeTab, setActiveTab] = useState<"overview" | "sessions" | "system">("overview");
   const [dashboard, setDashboard] = useState<DashboardMetricsResponse | null>(null);
   const [sessions, setSessions] = useState<SessionListResponse | null>(null);
@@ -101,6 +104,7 @@ export function DashboardPage() {
   const recentRuns = dashboard?.recent_runs || [];
   const trendData = dashboard?.trend || [];
   const usageData = dashboard?.usage_today || [];
+  const actor = getActorDescriptor(user, displayName);
 
   return (
     <div className="relative min-h-screen" style={{ backgroundColor: "#F5F4E7", paddingTop: 64 }}>
@@ -118,7 +122,9 @@ export function DashboardPage() {
             <BarChart3 size={13} style={{ color: "#1A3D1A" }} />
             <span style={{ ...mono, fontSize: 11, color: "#1A3D1A" }}>Trust Dashboard</span>
             <div style={{ width: 1, height: 14, backgroundColor: "#9C9C9C18" }} />
-            <span style={{ ...mono, fontSize: 11, color: "#686868" }}>Run performance and system health</span>
+            <span style={{ ...mono, fontSize: 11, color: actor.kind === "guest" ? "#686868" : "#1A3D1A" }}>
+              {actor.kind === "guest" ? "Guest-scoped workspace" : "Member-scoped workspace"}
+            </span>
           </div>
           <div className="flex items-center gap-1">
             {(["overview", "sessions", "system"] as const).map((tab) => (
@@ -143,6 +149,26 @@ export function DashboardPage() {
 
       <div className="relative z-10 mx-auto grid gap-6" style={{ maxWidth: 1480, padding: "28px clamp(20px, 3vw, 40px)" }}>
         <AppPageLinks currentPage="dashboard" />
+
+        <div
+          className="flex flex-wrap items-center justify-between gap-3"
+          style={{ border: "1px solid #00000010", backgroundColor: "#EBEAE0", padding: "14px 16px" }}
+        >
+          <div>
+            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Current Workspace</div>
+            <div style={{ fontFamily: "'TASA Orbiter', Inter, sans-serif", fontSize: "clamp(1.15rem, 1.6vw, 1.45rem)", fontWeight: 800, color: "#050505", letterSpacing: "-0.04em", textTransform: "uppercase" }}>
+              {actor.label}
+            </div>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "160%", color: "#686868", margin: "8px 0 0 0" }}>
+              {isAuthenticated
+                ? `Dashboard history is filtered to ${actor.detail}.`
+                : "Dashboard history follows this browser session until you sign in or create an account."}
+            </p>
+          </div>
+          <div style={{ ...mono, fontSize: 10, color: "#686868", border: "1px solid #00000010", backgroundColor: "#F5F4E7", padding: "9px 12px" }}>
+            {actor.detail}
+          </div>
+        </div>
 
         {backendNotice && (
           <div className="p-4" style={{ border: "1px solid #D1FF00", backgroundColor: "#D1FF0010" }}>
@@ -251,7 +277,13 @@ export function DashboardPage() {
                   </div>
                 </motion.div>
               )) : (
-                <span style={{ ...mono, fontSize: 10, color: "#686868" }}>No runs.</span>
+                <div className="p-5" style={{ border: "1px dashed #00000014", backgroundColor: "#EBEAE0" }}>
+                  <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 10 }}>No Runs Yet</div>
+                  <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: "#686868", margin: 0 }}>
+                    This dashboard is now scoped to {actor.kind === "guest" ? "your guest workspace" : "your account"}.
+                    Run something in Composer or What-If and it will show up here.
+                  </p>
+                </div>
               )}
             </motion.div>
           </>

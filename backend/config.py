@@ -55,6 +55,8 @@ class Settings:
     sqlite_db_path: Path
     allow_remote_reference_images: bool
     enable_session_history: bool
+    supabase_url: str | None
+    supabase_service_role_key: str | None
 
 
 @lru_cache(maxsize=1)
@@ -87,4 +89,6 @@ def get_settings() -> Settings:
         sqlite_db_path=Path(db_path),
         allow_remote_reference_images=_parse_bool(os.getenv("ALLOW_REMOTE_REFERENCE_IMAGES"), default=False),
         enable_session_history=_parse_bool(os.getenv("ENABLE_SESSION_HISTORY"), default=False),
+        supabase_url=os.getenv("SUPABASE_URL") or os.getenv("VITE_SUPABASE_URL"),
+        supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
     )

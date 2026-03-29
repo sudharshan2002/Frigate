@@ -33,6 +33,7 @@ class MetricsService:
                 """
                 CREATE TABLE IF NOT EXISTS metrics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    actor_key TEXT,
                     prompt_length INTEGER NOT NULL,
                     response_time_ms REAL NOT NULL,
                     rating REAL,
@@ -54,6 +55,7 @@ class MetricsService:
                 for row in connection.execute("PRAGMA table_info(metrics)").fetchall()
             }
             for column_name, column_type in {
+                "actor_key": "TEXT",
                 "confidence_score": "REAL",
                 "complexity_score": "REAL",
                 "impact_score": "REAL",
@@ -72,6 +74,7 @@ class MetricsService:
             cursor = connection.execute(
                 """
                 INSERT INTO metrics (
+                    actor_key,
                     prompt_length,
                     response_time_ms,
                     rating,
@@ -86,9 +89,10 @@ class MetricsService:
                     feedback,
                     created_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
+                    payload.actor_key or "guest:anonymous",
                     payload.prompt_length,
                     payload.response_time_ms,
                     payload.rating,
@@ -107,7 +111,7 @@ class MetricsService:
             connection.commit()
             return int(cursor.lastrowid)
 
-    def get_summary(self) -> MetricSummaryResponse:
+    def get_summary(self, actor_key: str | None = None) -> MetricSummaryResponse:
         """Compute aggregate metrics across all stored requests."""
         if not self.enabled:
             return MetricSummaryResponse(
@@ -130,7 +134,9 @@ class MetricsService:
                     AVG(complexity_score) AS avg_complexity_score,
                     AVG(impact_score) AS avg_impact_score
                 FROM metrics
-                """
+                WHERE actor_key = ?
+                """,
+                (actor_key or "guest:anonymous",),
             ).fetchone()
 
         total_requests = int(row["total_requests"] or 0)

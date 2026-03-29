@@ -236,7 +236,7 @@ function Hero() {
           <FadeIn delay={2.1} className="relative w-full">
             <div className="flex flex-wrap items-center gap-3">
               <motion.button
-                onClick={() => navigate(isAuthenticated ? "/composer" : "/signup")}
+                onClick={() => navigate("/composer")}
                 className="cursor-pointer group inline-flex items-center gap-3 border-none"
                 whileHover={prefersReducedMotion ? undefined : { y: -2 }}
                 whileTap={prefersReducedMotion ? undefined : { scale: 0.988 }}
@@ -253,7 +253,7 @@ function Hero() {
                   letterSpacing: "0.07em",
                 }}
               >
-                <span>{isAuthenticated ? "Open Composer" : "Create Account"}</span>
+                <span>{isAuthenticated ? "Open Composer" : "Try Composer"}</span>
                 <motion.span
                   style={{
                     color: "#050505",
@@ -268,7 +268,7 @@ function Hero() {
               </motion.button>
 
               <motion.button
-                onClick={() => navigate(isAuthenticated ? "/dashboard" : "/login")}
+                onClick={() => navigate("/dashboard")}
                 className="cursor-pointer group inline-flex items-center gap-3 border"
                 whileHover={prefersReducedMotion ? undefined : { y: -2 }}
                 whileTap={prefersReducedMotion ? undefined : { scale: 0.988 }}
@@ -288,7 +288,7 @@ function Hero() {
                 }}
               >
                 <span className="transition-colors duration-300 group-hover:text-white">
-                  {isAuthenticated ? "View Dashboard" : "Sign In"}
+                  {isAuthenticated ? "View Dashboard" : "Open Dashboard"}
                 </span>
               </motion.button>
             </div>
@@ -2026,7 +2026,7 @@ function FinalCTA() {
         <FadeIn delay={0.3}>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
-              onClick={() => navigate(isAuthenticated ? "/composer" : "/signup")}
+              onClick={() => navigate("/composer")}
               className="cursor-pointer border-none"
               style={{
                 ...mono, fontSize: 12, fontWeight: 600,
@@ -2037,10 +2037,10 @@ function FinalCTA() {
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.25)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
             >
-              {isAuthenticated ? "Open Composer →" : "Create Account →"}
+              {isAuthenticated ? "Open Composer →" : "Try Composer →"}
             </button>
             <button
-              onClick={() => navigate(isAuthenticated ? "/dashboard" : "/login")}
+              onClick={() => navigate("/dashboard")}
               className="cursor-pointer"
               style={{
                 ...mono, fontSize: 12, fontWeight: 600,
@@ -2052,7 +2052,7 @@ function FinalCTA() {
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.12)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
             >
-              {isAuthenticated ? "View Dashboard" : "Sign In"}
+              {isAuthenticated ? "View Dashboard" : "Open Dashboard"}
             </button>
           </div>
         </FadeIn>
