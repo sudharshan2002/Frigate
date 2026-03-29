@@ -2,11 +2,13 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "../lib/auth";
 import { GrainLocal } from "./GrainOverlay";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const WIPE_COVER_MS = 820;
 const WIPE_TOTAL_MS = 1550;
+const shellMaxWidth = 1480;
 
 const mono: CSSProperties = {
   fontFamily: "'Roboto Mono', monospace",
@@ -26,7 +28,7 @@ type MenuAction =
 
 type MenuPhase = "closed" | "opening" | "open" | "closing";
 
-const menuLinks: MenuTarget[] = [
+const baseMenuLinks: MenuTarget[] = [
   { label: "HOME", path: "/" },
   { label: "COMPOSER", path: "/composer" },
   { label: "WHAT-IF STUDIO", path: "/what-if" },
@@ -49,7 +51,7 @@ const contactLinks: Array<{ num: string; label: string; action: MenuAction }> = 
   },
 ];
 
-const utilityLinks: MenuTarget[] = [
+const baseUtilityLinks: MenuTarget[] = [
   { label: "COMPOSER", path: "/composer" },
   { label: "WHAT-IF STUDIO", path: "/what-if" },
   { label: "TRUST DASHBOARD", path: "/dashboard" },
@@ -197,14 +199,86 @@ function MiniMenuLink({
   );
 }
 
+function HeaderAccessButton({
+  label,
+  active,
+  emphasize = false,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  emphasize?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="cursor-pointer border-none"
+      style={{
+        ...mono,
+        fontSize: 9,
+        color: emphasize ? "#050505" : "#fff",
+        backgroundColor: emphasize ? "#D1FF00" : active ? "rgba(255,255,255,0.12)" : "transparent",
+        border: `1px solid ${emphasize ? "#D1FF00" : active ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.18)"}`,
+        padding: "9px 12px",
+        transition: "transform 0.22s ease-out",
+      }}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.transform = "translateY(-1px)";
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function LinkChip({
+  label,
+  active,
+  onClick,
+  emphasize = false,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  emphasize?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="cursor-pointer border-none"
+      style={{
+        ...mono,
+        fontSize: 10,
+        color: emphasize ? "#050505" : active ? "#1A3D1A" : "#050505",
+        backgroundColor: emphasize ? "#D1FF00" : active ? "#D1FF001E" : "rgba(255,255,255,0.58)",
+        border: `1px solid ${emphasize || active ? "#D1FF00" : "rgba(5,5,5,0.1)"}`,
+        padding: "9px 12px",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function Navbar() {
   const [menuPhase, setMenuPhase] = useState<MenuPhase>("closed");
   const [wipeKey, setWipeKey] = useState(0);
   const [wipeActive, setWipeActive] = useState(false);
   const [time, setTime] = useState("--:-- AM");
+  const { isAuthenticated, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const timersRef = useRef<number[]>([]);
+  const menuLinks = isAuthenticated ? [...baseMenuLinks.slice(0, 4), { label: "PROFILE", path: "/profile" }, baseMenuLinks[4]] : baseMenuLinks;
+  const utilityLinks = isAuthenticated
+    ? [...baseUtilityLinks.slice(0, 3), { label: "PROFILE", path: "/profile" }, baseUtilityLinks[3]]
+    : baseUtilityLinks;
 
   const menuVisible = menuPhase !== "closed";
 
@@ -274,6 +348,16 @@ export function Navbar() {
   const isActiveTarget = (target: MenuTarget) =>
     location.pathname === target.path && (target.hash ? location.hash === target.hash : location.hash === "");
 
+  const handleSignOut = () => {
+    void signOut()
+      .catch((error) => {
+        console.error("Unable to sign out.", error);
+      })
+      .finally(() => {
+        navigate("/");
+      });
+  };
+
   const openMenu = () => {
     if (menuPhase !== "closed") {
       return;
@@ -318,8 +402,8 @@ export function Navbar() {
         transition={{ duration: 0.7, ease, delay: 1.3 }}
       >
         <div
-          className="mx-auto grid h-full w-full grid-cols-2 items-center md:grid-cols-4"
-          style={{ maxWidth: 1920, padding: "0 clamp(20px, 3vw, 48px)" }}
+          className="mx-auto flex h-full w-full items-center justify-between gap-6"
+          style={{ maxWidth: shellMaxWidth, padding: "0 clamp(20px, 3vw, 40px)" }}
         >
           <div className="flex items-center">
             <button
@@ -332,15 +416,43 @@ export function Navbar() {
             </button>
           </div>
 
-          <div className="hidden items-center md:flex">
+          <div className="hidden flex-1 items-center justify-center gap-10 md:flex">
             <span style={{ ...mono, fontSize: 9, color: "#fff", opacity: 0.62 }}>PROMPT INTELLIGENCE PLATFORM</span>
-          </div>
-
-          <div className="hidden items-center md:flex">
             <span style={{ ...mono, fontSize: 9, color: "#fff", opacity: 0.4 }}>{time}</span>
           </div>
 
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-2">
+            <div className="hidden lg:flex items-center gap-2">
+              {loading ? null : isAuthenticated ? (
+                <>
+                  <HeaderAccessButton
+                    label="Dashboard"
+                    active={location.pathname === "/dashboard"}
+                    onClick={() => navigate("/dashboard")}
+                  />
+                  <HeaderAccessButton
+                    label="Profile"
+                    active={location.pathname === "/profile"}
+                    onClick={() => navigate("/profile")}
+                  />
+                  <HeaderAccessButton label="Sign Out" active={false} emphasize onClick={handleSignOut} />
+                </>
+              ) : (
+                <>
+                  <HeaderAccessButton
+                    label="Sign In"
+                    active={location.pathname === "/login"}
+                    onClick={() => navigate("/login")}
+                  />
+                  <HeaderAccessButton
+                    label="Create Account"
+                    active={location.pathname === "/signup"}
+                    emphasize
+                    onClick={() => navigate("/signup")}
+                  />
+                </>
+              )}
+            </div>
             <button
               type="button"
               onClick={menuVisible ? () => closeMenu() : openMenu}
@@ -385,12 +497,12 @@ export function Navbar() {
             <div
               className="mx-auto flex h-[72px] w-full items-center"
               style={{
-                maxWidth: 1920,
-                padding: "0 clamp(20px, 3vw, 48px)",
+                maxWidth: shellMaxWidth,
+                padding: "0 clamp(20px, 3vw, 40px)",
                 borderBottom: "1px solid rgba(5,5,5,0.08)",
               }}
             >
-              <div className="grid h-full w-full grid-cols-2 items-center md:grid-cols-4">
+              <div className="flex h-full w-full items-center justify-between gap-6">
                 <div className="flex items-center">
                   <button
                     type="button"
@@ -402,11 +514,8 @@ export function Navbar() {
                   </button>
                 </div>
 
-                <div className="hidden items-center md:flex">
+                <div className="hidden flex-1 items-center justify-center gap-10 md:flex">
                   <span style={{ ...mono, fontSize: 9, color: "#050505", opacity: 0.42 }}>PROMPT INTELLIGENCE PLATFORM</span>
-                </div>
-
-                <div className="hidden items-center md:flex">
                   <span style={{ ...mono, fontSize: 9, color: "#050505", opacity: 0.34 }}>{time}</span>
                 </div>
 
@@ -657,7 +766,50 @@ export function Navbar() {
                         [Navigation]
                       </div>
                     </motion.div>
-
+                    <motion.div
+                      className="mb-8 flex flex-wrap items-center gap-2"
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.45, ease, delay: 0.5 }}
+                    >
+                      {loading ? null : isAuthenticated ? (
+                        <>
+                          <LinkChip
+                            label="Dashboard"
+                            active={location.pathname === "/dashboard"}
+                            emphasize
+                            onClick={() => closeMenu({ type: "route", target: { label: "DASHBOARD", path: "/dashboard" } })}
+                          />
+                          <LinkChip
+                            label="Profile"
+                            active={location.pathname === "/profile"}
+                            onClick={() => closeMenu({ type: "route", target: { label: "PROFILE", path: "/profile" } })}
+                          />
+                          <LinkChip
+                            label="Sign Out"
+                            active={false}
+                            onClick={() => {
+                              closeMenu();
+                              handleSignOut();
+                            }}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <LinkChip
+                            label="Create Account"
+                            active={location.pathname === "/signup"}
+                            emphasize
+                            onClick={() => closeMenu({ type: "route", target: { label: "CREATE ACCOUNT", path: "/signup" } })}
+                          />
+                          <LinkChip
+                            label="Sign In"
+                            active={location.pathname === "/login"}
+                            onClick={() => closeMenu({ type: "route", target: { label: "SIGN IN", path: "/login" } })}
+                          />
+                        </>
+                      )}
+                    </motion.div>
                   </div>
 
                   <div className="flex min-h-0 items-start">

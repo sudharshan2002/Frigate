@@ -12,9 +12,11 @@ from app.schemas import MetricCreateRequest, MetricSummaryResponse
 class MetricsService:
     """Persist interaction metrics in a lightweight SQLite database."""
 
-    def __init__(self, db_path: Path) -> None:
+    def __init__(self, db_path: Path, *, enabled: bool = True) -> None:
         self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.enabled = enabled
+        if self.enabled:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = Lock()
 
     def _connect(self) -> sqlite3.Connection:
@@ -24,6 +26,8 @@ class MetricsService:
 
     def init_storage(self) -> None:
         """Create the metrics table and migrate new explainability columns when needed."""
+        if not self.enabled:
+            return
         with self._lock, self._connect() as connection:
             connection.execute(
                 """
@@ -62,6 +66,8 @@ class MetricsService:
 
     def store_metric(self, payload: MetricCreateRequest) -> int:
         """Insert a new metrics record and return its identifier."""
+        if not self.enabled:
+            return 0
         with self._lock, self._connect() as connection:
             cursor = connection.execute(
                 """
@@ -103,6 +109,16 @@ class MetricsService:
 
     def get_summary(self) -> MetricSummaryResponse:
         """Compute aggregate metrics across all stored requests."""
+        if not self.enabled:
+            return MetricSummaryResponse(
+                total_requests=0,
+                avg_response_time=0.0,
+                avg_rating=None,
+                avg_confidence_score=None,
+                avg_complexity_score=None,
+                avg_impact_score=None,
+            )
+
         with self._lock, self._connect() as connection:
             row = connection.execute(
                 """

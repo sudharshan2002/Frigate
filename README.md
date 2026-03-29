@@ -11,6 +11,23 @@ The frontend expects the FastAPI backend at `http://127.0.0.1:8000` unless `VITE
 
 The Vite app now lives in `frontend/`, but the root scripts still proxy to it so the local workflow stays the same.
 
+## Supabase auth setup
+
+This project uses Supabase Auth for login and stores lightweight account details in session metadata. If you also want a visible table in the Supabase dashboard, run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL Editor to create `public.profiles` and backfill existing users.
+
+For local auth to work cleanly:
+
+1. In Supabase, set the site URL to `http://localhost:5173`.
+2. Add `http://localhost:5173/auth/callback` to your redirect URLs.
+3. If you deploy the frontend, add the deployed `/auth/callback` URL there too.
+4. In `Authentication -> Providers -> Google`, enable Google and paste your Google OAuth client ID and secret.
+
+After that:
+
+- `Authentication -> Users` shows signed-in accounts.
+- `Table Editor -> profiles` shows the profile rows created by the SQL script.
+- OAuth, magic links, and email confirmations all return through `/auth/callback` before routing the user into `/dashboard` or `/profile`.
+
 ## Running the backend locally
 
 1. Create a Python virtual environment.

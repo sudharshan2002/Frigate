@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from itertools import count
 from pathlib import Path
 from threading import Lock
 
@@ -23,9 +24,12 @@ from app.schemas import (
 class SessionService:
     """Store generations and expose dashboard-friendly summaries."""
 
-    def __init__(self, db_path: Path) -> None:
+    def __init__(self, db_path: Path, *, enabled: bool = True) -> None:
         self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.enabled = enabled
+        self._transient_ids = count(start=1)
+        if self.enabled:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = Lock()
 
     def _connect(self) -> sqlite3.Connection:
@@ -35,6 +39,8 @@ class SessionService:
 
     def init_storage(self) -> None:
         """Create the sessions table when it does not already exist."""
+        if not self.enabled:
+            return
         with self._lock, self._connect() as connection:
             connection.execute(
                 """
@@ -60,6 +66,9 @@ class SessionService:
 
     def create_session(self, payload: SessionCreate) -> SessionRecord:
         """Persist a generation record and return the stored session."""
+        if not self.enabled:
+            return self._session_from_payload(payload, session_id=int(next(self._transient_ids)))
+
         with self._lock, self._connect() as connection:
             cursor = connection.execute(
                 """
@@ -106,6 +115,9 @@ class SessionService:
 
     def list_sessions(self, limit: int = 20) -> SessionListResponse:
         """Return the most recent stored sessions."""
+        if not self.enabled:
+            return SessionListResponse(sessions=[], total_runs=0, storage_bytes=0)
+
         capped_limit = max(1, min(limit, 50))
         with self._lock, self._connect() as connection:
             rows = connection.execute(
@@ -135,6 +147,25 @@ class SessionService:
 
     def get_dashboard_metrics(self) -> DashboardMetricsResponse:
         """Build aggregated dashboard metrics from stored sessions and metrics logs."""
+        if not self.enabled:
+            return DashboardMetricsResponse(
+                avg_confidence=0.0,
+                avg_clarity=0.0,
+                avg_quality=0.0,
+                avg_response_time=0.0,
+                total_runs=0,
+                trend=[],
+                usage_today=[],
+                recent_runs=[],
+                system_status=[
+                    SystemStatusItem(label="History", value="Disabled", status="Private by default"),
+                    SystemStatusItem(label="Storage Used", value="0 B", status="Ephemeral plan"),
+                ],
+                storage_bytes=0,
+                avg_impact_score=0.0,
+                avg_prompt_complexity=0.0,
+            )
+
         with self._lock, self._connect() as connection:
             rows = connection.execute(
                 """
@@ -286,4 +317,23 @@ class SessionService:
             quality_label=row["quality_label"],
             difference_summary=row["difference_summary"],
             created_at=row["created_at"],
+        )
+
+    @staticmethod
+    def _session_from_payload(payload: SessionCreate, *, session_id: int) -> SessionRecord:
+        return SessionRecord(
+            id=session_id,
+            prompt=payload.prompt,
+            output=payload.output,
+            mode=payload.mode,
+            source=payload.source,
+            provider=payload.provider,
+            response_time_ms=round(float(payload.response_time_ms), 2),
+            token_count=int(payload.token_count),
+            trust_score=round(float(payload.trust_score), 2),
+            clarity_score=round(float(payload.clarity_score), 2),
+            quality_score=round(float(payload.quality_score), 2),
+            quality_label=payload.quality_label,
+            difference_summary=payload.difference_summary,
+            created_at=payload.created_at,
         )

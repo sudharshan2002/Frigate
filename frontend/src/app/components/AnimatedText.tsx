@@ -1,102 +1,117 @@
+import { Fragment, type CSSProperties } from "react";
 import { motion } from "motion/react";
-import { useInView } from "./useInView";
 
-export function AnimatedHeadline({
-  children,
-  className = "",
+const ease = [0.16, 1, 0.3, 1] as const;
+
+export function WordReveal({
+  text,
   delay = 0,
+  lineGap = "0.2em",
+  style,
 }: {
-  children: React.ReactNode;
-  className?: string;
+  text: string;
   delay?: number;
+  lineGap?: string;
+  style?: CSSProperties;
 }) {
-  const { ref, inView } = useInView(0.2);
-
-  // Extract text content for word splitting
-  const getText = (node: React.ReactNode): string => {
-    if (typeof node === "string") return node;
-    if (typeof node === "number") return String(node);
-    if (!node) return "";
-    if (Array.isArray(node)) return node.map(getText).join("");
-    if (typeof node === "object" && "props" in node) {
-      return getText((node as React.ReactElement<{ children?: React.ReactNode }>).props.children);
-    }
-    return "";
-  };
-
-  // Get the style from the child span if it exists
-  const getStyle = (node: React.ReactNode): React.CSSProperties | undefined => {
-    if (typeof node === "object" && node && "props" in node) {
-      return (node as React.ReactElement<{ style?: React.CSSProperties }>).props.style;
-    }
-    return undefined;
-  };
-
-  const text = getText(children);
-  const style = getStyle(children);
-  const words = text.split(" ").filter(Boolean);
+  const words = text.trim().split(/\s+/);
 
   return (
-    <div ref={ref} className={className}>
-      {words.map((word, i) => (
-        <motion.span
-          key={i}
-          className="inline-block mr-[0.3em]"
-          style={style}
-          initial={{ opacity: 0.15, filter: "blur(6px)", y: 20 }}
-          animate={
-            inView
-              ? { opacity: 1, filter: "blur(0px)", y: 0 }
-              : { opacity: 0.15, filter: "blur(6px)", y: 20 }
-          }
-          transition={{
-            opacity: { duration: 0.6, ease: "easeOut", delay: delay + i * 0.06 },
-            filter: { duration: 0.6, ease: "easeOut", delay: delay + i * 0.06 },
-            y: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: delay + i * 0.06 },
-          }}
-        >
-          {word}
-        </motion.span>
+    <span style={{ display: "block", overflow: "hidden", ...style }}>
+      {words.map((word, index) => (
+        <Fragment key={`${word}-${index}`}>
+          <motion.span
+            style={{ display: "inline-block", whiteSpace: "pre" }}
+            initial={{ opacity: 0, y: "0.9em" }}
+            animate={{ opacity: 1, y: "0em" }}
+            transition={{ duration: 0.65, ease, delay: delay + index * 0.06 }}
+          >
+            {word}
+          </motion.span>
+          {index < words.length - 1 ? <span style={{ display: "inline-block", width: lineGap }} /> : null}
+        </Fragment>
       ))}
-    </div>
+    </span>
+  );
+}
+
+export function FadeSlideText({
+  children,
+  delay = 0,
+  distance = 14,
+  style,
+}: {
+  children: string;
+  delay?: number;
+  distance?: number;
+  style?: CSSProperties;
+}) {
+  return (
+    <motion.span
+      style={{ display: "block", ...style }}
+      initial={{ opacity: 0, y: distance }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.58, ease, delay }}
+    >
+      {children}
+    </motion.span>
   );
 }
 
 export function FadeIn({
   children,
-  className = "",
   delay = 0,
+  className,
   direction = "up",
-  style = {},
+  style,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+  direction?: "up" | "down" | "none";
+  style?: CSSProperties;
+}) {
+  const initialY = direction === "none" ? 0 : direction === "down" ? -16 : 16;
+
+  return (
+    <motion.div
+      className={className}
+      style={style}
+      initial={{ opacity: 0, y: initialY }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.58, ease, delay }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+export function AnimatedHeadline({
+  children,
+  className,
+  delay = 0,
 }: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-  direction?: "up" | "left" | "right" | "none";
-  style?: React.CSSProperties;
 }) {
-  const { ref, inView } = useInView(0.15);
-  const initial: Record<string, number> = { opacity: 0 };
-  if (direction === "up") initial.y = 30;
-  if (direction === "left") initial.x = -15;
-  if (direction === "right") initial.x = 15;
-
-  const animate: Record<string, number> = { opacity: 1, y: 0, x: 0 };
-
   return (
     <motion.div
-      ref={ref}
       className={className}
-      initial={initial}
-      animate={inView ? animate : initial}
-      transition={{
-        duration: 0.7,
-        ease: [0.16, 1, 0.3, 1],
-        delay,
-      }}
-      style={style}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.35 }}
+      transition={{ duration: 0.72, ease, delay }}
     >
-      {children}
+      <motion.div
+        initial={{ clipPath: "inset(0 0 100% 0)" }}
+        whileInView={{ clipPath: "inset(0 0 0% 0)" }}
+        viewport={{ once: true, amount: 0.35 }}
+        transition={{ duration: 0.8, ease, delay: delay + 0.06 }}
+      >
+        {children}
+      </motion.div>
     </motion.div>
   );
 }

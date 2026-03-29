@@ -53,6 +53,8 @@ class Settings:
     hf_num_inference_steps: int
     hf_guidance_scale: float
     sqlite_db_path: Path
+    allow_remote_reference_images: bool
+    enable_session_history: bool
 
 
 @lru_cache(maxsize=1)
@@ -83,4 +85,6 @@ def get_settings() -> Settings:
         hf_num_inference_steps=int(os.getenv("HF_NUM_INFERENCE_STEPS", "28")),
         hf_guidance_scale=float(os.getenv("HF_GUIDANCE_SCALE", "5.5")),
         sqlite_db_path=Path(db_path),
+        allow_remote_reference_images=_parse_bool(os.getenv("ALLOW_REMOTE_REFERENCE_IMAGES"), default=False),
+        enable_session_history=_parse_bool(os.getenv("ENABLE_SESSION_HISTORY"), default=False),
     )

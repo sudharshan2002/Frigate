@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router";
+import { useAuth } from "../lib/auth";
 import { FadeIn } from "./AnimatedText";
 import { GrainLocal } from "./GrainOverlay";
 
@@ -49,13 +50,32 @@ function FooterNavLink({ label, path }: { label: string; path: string }) {
   );
 }
 
-function FooterSmallLink({ num, label, path }: { num: string; label: string; path: string }) {
+function FooterSmallLink({
+  num,
+  label,
+  onClick,
+  path,
+}: {
+  num: string;
+  label: string;
+  onClick?: () => void;
+  path?: string;
+}) {
   const navigate = useNavigate();
 
   return (
     <button
       type="button"
-      onClick={() => navigate(path)}
+      onClick={() => {
+        if (onClick) {
+          onClick();
+          return;
+        }
+
+        if (path) {
+          navigate(path);
+        }
+      }}
       className="group relative flex w-full items-center gap-5 overflow-hidden border-none bg-transparent px-0 py-1.5 text-left"
       style={{
         fontFamily: "'Roboto Mono', monospace",
@@ -75,6 +95,19 @@ function FooterSmallLink({ num, label, path }: { num: string; label: string; pat
 }
 
 export function Footer() {
+  const { isAuthenticated, signOut } = useAuth();
+  const accessLinks = isAuthenticated
+    ? [
+        { num: "2.0", label: "DASHBOARD", path: "/dashboard" },
+        { num: "2.1", label: "COMPOSER", path: "/composer" },
+        { num: "2.2", label: "SIGN OUT", onClick: () => void signOut().finally(() => navigate("/")) },
+      ]
+    : [
+        { num: "2.0", label: "CREATE ACCOUNT", path: "/signup" },
+        { num: "2.1", label: "SIGN IN", path: "/login" },
+      ];
+  const navigate = useNavigate();
+
   return (
     <footer className="relative w-full overflow-hidden" style={{ backgroundColor: "#F4F4E8" }}>
       <GrainLocal opacity={0.03} />
@@ -176,6 +209,19 @@ export function Footer() {
           <div className="hidden md:block col-span-1 pr-6" />
 
           <div className="col-span-1 flex flex-col gap-12 items-start">
+            <div className="w-full">
+              <FadeIn delay={0.1}>
+                <div style={{ ...mono, fontSize: 10, color: "#050505", opacity: 0.4, marginBottom: 16 }}>[ACCESS]</div>
+              </FadeIn>
+              <div className="flex flex-col gap-1">
+                {accessLinks.map((link, index) => (
+                  <FadeIn key={link.num} delay={0.12 + index * 0.03}>
+                    <FooterSmallLink num={link.num} label={link.label} onClick={link.onClick} path={link.path} />
+                  </FadeIn>
+                ))}
+              </div>
+            </div>
+
             <div className="w-full">
               <FadeIn delay={0.12}>
                 <div style={{ ...mono, fontSize: 10, color: "#050505", opacity: 0.4, marginBottom: 16 }}>[LEGAL]</div>

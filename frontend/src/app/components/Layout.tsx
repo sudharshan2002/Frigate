@@ -5,7 +5,7 @@ import { GrainOverlay } from "./GrainOverlay";
 
 export function Layout() {
   const location = useLocation();
-  const isAppPage = ["/composer", "/what-if", "/dashboard"].includes(location.pathname);
+  const isFocusedPage = ["/composer", "/what-if", "/dashboard", "/profile", "/login", "/signup"].includes(location.pathname);
 
   return (
     <div className="w-full" style={{ fontFamily: "Inter, sans-serif" }}>
@@ -14,7 +14,7 @@ export function Layout() {
       <main>
         <Outlet />
       </main>
-      {!isAppPage && <Footer />}
+      {!isFocusedPage && <Footer />}
     </div>
   );
 }

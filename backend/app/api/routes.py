@@ -50,6 +50,14 @@ def _get_session_service(request: Request) -> SessionService:
     return request.app.state.session_service
 
 
+def _validation_error(exc: ValueError) -> HTTPException:
+    return HTTPException(status_code=400, detail=str(exc))
+
+
+def _internal_error(message: str) -> HTTPException:
+    return HTTPException(status_code=500, detail=message)
+
+
 @router.post("/generate", response_model=GenerateResponse, tags=["prompt"])
 async def generate_content(payload: GenerateRequest, request: Request) -> GenerateResponse:
     """Get AI text and pictures, plus the data explaining how we got them."""
@@ -57,9 +65,12 @@ async def generate_content(payload: GenerateRequest, request: Request) -> Genera
 
     try:
         return await orchestrator.generate(payload, request_id=_request_id(request))
+    except ValueError as exc:
+        logger.info("Generation rejected: %s", exc)
+        raise _validation_error(exc) from exc
     except Exception as exc:  # pragma: no cover - defensive API guard
         logger.exception("Generation failed")
-        raise HTTPException(status_code=500, detail=f"Generation failed: {exc}") from exc
+        raise _internal_error("Generation failed. Please try again.") from exc
 
 
 @router.post("/analyze", response_model=AnalyzeResponse, tags=["prompt"])
@@ -69,9 +80,12 @@ async def analyze_live(payload: AnalyzeRequest, request: Request) -> AnalyzeResp
 
     try:
         return orchestrator.analyze_prompt(payload)
+    except ValueError as exc:
+        logger.info("Analysis rejected: %s", exc)
+        raise _validation_error(exc) from exc
     except Exception as exc:
         logger.exception("Analysis failed")
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}") from exc
+        raise _internal_error("Analysis failed. Please try again.") from exc
 
 
 @router.post("/what-if", response_model=WhatIfResponse, tags=["prompt"])
@@ -81,9 +95,12 @@ async def what_if_analysis(payload: WhatIfRequest, request: Request) -> WhatIfRe
 
     try:
         return await orchestrator.compare(payload, request_id=_request_id(request))
+    except ValueError as exc:
+        logger.info("What-if analysis rejected: %s", exc)
+        raise _validation_error(exc) from exc
     except Exception as exc:  # pragma: no cover - defensive API guard
         logger.exception("What-if analysis failed")
-        raise HTTPException(status_code=500, detail=f"What-if analysis failed: {exc}") from exc
+        raise _internal_error("What-if analysis failed. Please try again.") from exc
 
 
 @router.post("/explain", response_model=ExplainResponse, tags=["explainability"])
@@ -102,9 +119,12 @@ async def explain_prompt(payload: ExplainRequest, request: Request) -> ExplainRe
             reference_image_used=False,
         ).mapping
         return ExplainResponse(mapping=mapping)
+    except ValueError as exc:
+        logger.info("Explainability mapping rejected: %s", exc)
+        raise _validation_error(exc) from exc
     except Exception as exc:  # pragma: no cover - defensive API guard
         logger.exception("Explainability mapping failed")
-        raise HTTPException(status_code=500, detail=f"Explainability mapping failed: {exc}") from exc
+        raise _internal_error("Explainability mapping failed. Please try again.") from exc
 
 
 @router.post("/metrics", response_model=MetricCreateResponse, tags=["metrics"])
@@ -115,9 +135,12 @@ async def create_metric(payload: MetricCreateRequest, request: Request) -> Metri
     try:
         record_id = service.store_metric(payload)
         return MetricCreateResponse(status="stored", record_id=record_id)
+    except ValueError as exc:
+        logger.info("Metric storage rejected: %s", exc)
+        raise _validation_error(exc) from exc
     except Exception as exc:  # pragma: no cover - defensive API guard
         logger.exception("Metric storage failed")
-        raise HTTPException(status_code=500, detail=f"Metric storage failed: {exc}") from exc
+        raise _internal_error("Metric storage failed. Please try again.") from exc
 
 
 @router.get("/metrics", response_model=MetricSummaryResponse, tags=["metrics"])
@@ -129,7 +152,7 @@ async def read_metrics(request: Request) -> MetricSummaryResponse:
         return service.get_summary()
     except Exception as exc:  # pragma: no cover - defensive API guard
         logger.exception("Metrics summary failed")
-        raise HTTPException(status_code=500, detail=f"Metrics summary failed: {exc}") from exc
+        raise _internal_error("Metrics summary failed. Please try again.") from exc
 
 
 @router.get("/sessions", response_model=SessionListResponse, tags=["sessions"])
@@ -144,7 +167,7 @@ async def read_sessions(
         return service.list_sessions(limit=limit)
     except Exception as exc:  # pragma: no cover - defensive API guard
         logger.exception("Session history failed")
-        raise HTTPException(status_code=500, detail=f"Session history failed: {exc}") from exc
+        raise _internal_error("Session history failed. Please try again.") from exc
 
 
 @router.get("/dashboard", response_model=DashboardMetricsResponse, tags=["sessions"])
@@ -156,4 +179,4 @@ async def read_dashboard(request: Request) -> DashboardMetricsResponse:
         return service.get_dashboard_metrics()
     except Exception as exc:  # pragma: no cover - defensive API guard
         logger.exception("Dashboard metrics failed")
-        raise HTTPException(status_code=500, detail=f"Dashboard metrics failed: {exc}") from exc
+        raise _internal_error("Dashboard metrics failed. Please try again.") from exc

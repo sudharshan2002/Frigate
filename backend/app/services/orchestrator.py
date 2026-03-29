@@ -120,21 +120,21 @@ class XAIOrchestrator:
             output=analysis_source or primary_output,
             mode=payload.mode,
         )
-        session = self.session_service.create_session(
-            SessionCreate(
-                prompt=prompt_for_session,
-                output=primary_output,
-                mode=payload.mode,
-                source=payload.source,
-                provider=primary_provider,
-                response_time_ms=total_latency_ms,
-                token_count=len(tokenize_text(prompt_for_session)),
-                trust_score=trust_score,
-                clarity_score=clarity_score,
-                quality_score=quality_score,
-                quality_label=quality_label_from_score(quality_score),
-            )
+        session_payload = SessionCreate(
+            prompt=prompt_for_session,
+            output=primary_output,
+            mode=payload.mode,
+            source=payload.source,
+            provider=primary_provider,
+            response_time_ms=total_latency_ms,
+            token_count=len(tokenize_text(prompt_for_session)),
+            trust_score=trust_score,
+            clarity_score=clarity_score,
+            quality_score=quality_score,
+            quality_label=quality_label_from_score(quality_score),
         )
+        session = self.session_service.create_session(session_payload)
+
         self.metrics_service.store_metric(
             MetricCreateRequest(
                 prompt_length=len(prompt_for_session),
@@ -254,38 +254,36 @@ class XAIOrchestrator:
             modified_primary.analysis_text or modified_output,
             payload.mode,
         )
-        original_session = self.session_service.create_session(
-            SessionCreate(
-                prompt=original_prompt,
-                output=original_output,
-                mode=payload.mode,
-                source="what-if",
-                provider=original_provider,
-                response_time_ms=original_latency,
-                token_count=len(tokenize_text(original_prompt)),
-                trust_score=original_scores[0],
-                clarity_score=original_scores[1],
-                quality_score=original_scores[2],
-                quality_label=quality_label_from_score(original_scores[2]),
-                difference_summary=difference,
-            )
+        original_session_payload = SessionCreate(
+            prompt=original_prompt,
+            output=original_output,
+            mode=payload.mode,
+            source="what-if",
+            provider=original_provider,
+            response_time_ms=original_latency,
+            token_count=len(tokenize_text(original_prompt)),
+            trust_score=original_scores[0],
+            clarity_score=original_scores[1],
+            quality_score=original_scores[2],
+            quality_label=quality_label_from_score(original_scores[2]),
+            difference_summary=difference,
         )
-        modified_session = self.session_service.create_session(
-            SessionCreate(
-                prompt=modified_prompt,
-                output=modified_output,
-                mode=payload.mode,
-                source="what-if",
-                provider=modified_provider,
-                response_time_ms=modified_latency,
-                token_count=len(tokenize_text(modified_prompt)),
-                trust_score=modified_scores[0],
-                clarity_score=modified_scores[1],
-                quality_score=modified_scores[2],
-                quality_label=quality_label_from_score(modified_scores[2]),
-                difference_summary=difference,
-            )
+        modified_session_payload = SessionCreate(
+            prompt=modified_prompt,
+            output=modified_output,
+            mode=payload.mode,
+            source="what-if",
+            provider=modified_provider,
+            response_time_ms=modified_latency,
+            token_count=len(tokenize_text(modified_prompt)),
+            trust_score=modified_scores[0],
+            clarity_score=modified_scores[1],
+            quality_score=modified_scores[2],
+            quality_label=quality_label_from_score(modified_scores[2]),
+            difference_summary=difference,
         )
+        original_session = self.session_service.create_session(original_session_payload)
+        modified_session = self.session_service.create_session(modified_session_payload)
 
         self.metrics_service.store_metric(
             MetricCreateRequest(
@@ -340,7 +338,17 @@ class XAIOrchestrator:
 
     def analyze_prompt(self, payload: AnalyzeRequest) -> AnalyzeResponse:
         """Perform real-time NLP segmentation and explanation summary."""
-        segments = self.generator.nlp_analyzer.analyze_prompt(payload.prompt)
+        if self.generator.nlp_analyzer is not None:
+            segments = self.generator.nlp_analyzer.analyze_prompt(payload.prompt)
+        else:
+            profile = self.segmenter.segment(payload.prompt, reference_image_used=False)
+            segments = self.explainer.analyze_prompt(
+                prompt=payload.prompt,
+                output=payload.prompt,
+                mode=payload.mode,
+                segment_profile=profile,
+                reference_image_used=False,
+            ).segments
         
         # Build a live explanation summary
         strongest = segments[0].label.lower() if segments else "subject"

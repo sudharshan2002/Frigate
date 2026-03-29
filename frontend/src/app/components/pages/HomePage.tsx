@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { motion, useScroll, useTransform, useMotionTemplate, useSpring, AnimatePresence, useReducedMotion } from "motion/react";
 import { useNavigate } from "react-router";
+import { useAuth } from "../../lib/auth";
 import { AnimatedHeadline, FadeIn } from "../AnimatedText";
 import { GrainLocal } from "../GrainOverlay";
 import { ImageWithFallback } from "../common/ImageWithFallback";
@@ -79,6 +80,7 @@ function LogoBar() {
 // Hero layout
 function Hero() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const heroRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
   const [isVideoExpanded, setIsVideoExpanded] = useState(false);
@@ -232,41 +234,64 @@ function Hero() {
           </FadeIn>
 
           <FadeIn delay={2.1} className="relative w-full">
-            <motion.button
-              onClick={() => navigate("/composer")}
-              className="cursor-pointer group inline-flex items-center gap-3 border"
-              whileHover={prefersReducedMotion ? undefined : { y: -2 }}
-              whileTap={prefersReducedMotion ? undefined : { scale: 0.988 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              style={{
-                ...mono,
-                minHeight: "46px",
-                padding: "0 16px",
-                borderColor: "rgba(244,244,232,0.18)",
-                background: "rgba(255,255,255,0.02)",
-                color: "#F4F4E8",
-                outline: "none",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.07em",
-                backdropFilter: "blur(8px)",
-              }}
-            >
-              <span className="transition-colors duration-300 group-hover:text-white">
-                Open Composer
-              </span>
-              <motion.span
+            <div className="flex flex-wrap items-center gap-3">
+              <motion.button
+                onClick={() => navigate(isAuthenticated ? "/composer" : "/signup")}
+                className="cursor-pointer group inline-flex items-center gap-3 border-none"
+                whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.988 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                 style={{
-                  color: "#D1FF00",
-                  fontSize: 14,
-                  lineHeight: 1,
+                  ...mono,
+                  minHeight: "48px",
+                  padding: "0 18px",
+                  backgroundColor: "#D1FF00",
+                  color: "#050505",
+                  outline: "none",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.07em",
                 }}
-                animate={prefersReducedMotion ? undefined : { x: [0, 2, 0] }}
-                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
               >
-                &gt;
-              </motion.span>
-            </motion.button>
+                <span>{isAuthenticated ? "Open Composer" : "Create Account"}</span>
+                <motion.span
+                  style={{
+                    color: "#050505",
+                    fontSize: 14,
+                    lineHeight: 1,
+                  }}
+                  animate={prefersReducedMotion ? undefined : { x: [0, 2, 0] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  &gt;
+                </motion.span>
+              </motion.button>
+
+              <motion.button
+                onClick={() => navigate(isAuthenticated ? "/dashboard" : "/login")}
+                className="cursor-pointer group inline-flex items-center gap-3 border"
+                whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.988 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  ...mono,
+                  minHeight: "46px",
+                  padding: "0 16px",
+                  borderColor: "rgba(244,244,232,0.18)",
+                  background: "rgba(255,255,255,0.02)",
+                  color: "#F4F4E8",
+                  outline: "none",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.07em",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <span className="transition-colors duration-300 group-hover:text-white">
+                  {isAuthenticated ? "View Dashboard" : "Sign In"}
+                </span>
+              </motion.button>
+            </div>
           </FadeIn>
 
         </div>
@@ -1978,6 +2003,7 @@ function Testimonial() {
 // Final call-to-action bar
 function FinalCTA() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   return (
     <section className="relative" style={{ backgroundColor: "#D1FF00", padding: "clamp(80px, 14vw, 180px) clamp(20px, 3vw, 48px)" }}>
       <GrainLocal opacity={0.04} />
@@ -1992,24 +2018,43 @@ function FinalCTA() {
         </AnimatedHeadline>
         <FadeIn delay={0.2}>
           <p className="mx-auto mb-10" style={{ fontFamily: "Inter, sans-serif", fontSize: 16, lineHeight: "175%", color: "#050505", opacity: 0.55, maxWidth: 480 }}>
-            Open the Composer to map prompt influence, compare edits, and start shaping outputs with clarity.
+            {isAuthenticated
+              ? "Your session is active. Move into Composer, What-If, and Dashboard with the identity layer already attached."
+              : "Create an account to keep sessions private, then move into Composer, What-If, and Dashboard with a cleaner identity layer."}
           </p>
         </FadeIn>
         <FadeIn delay={0.3}>
-          <button
-            onClick={() => navigate("/composer")}
-            className="cursor-pointer border-none"
-            style={{
-              ...mono, fontSize: 12, fontWeight: 600,
-              color: "#D1FF00", backgroundColor: "#050505",
-              padding: "18px 48px", borderRadius: 4,
-              transition: "transform 0.2s ease-out, box-shadow 0.2s ease-out",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.25)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
-          >
-            Open Frigate &rarr;
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => navigate(isAuthenticated ? "/composer" : "/signup")}
+              className="cursor-pointer border-none"
+              style={{
+                ...mono, fontSize: 12, fontWeight: 600,
+                color: "#D1FF00", backgroundColor: "#050505",
+                padding: "18px 34px", borderRadius: 4,
+                transition: "transform 0.2s ease-out, box-shadow 0.2s ease-out",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.25)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+            >
+              {isAuthenticated ? "Open Composer →" : "Create Account →"}
+            </button>
+            <button
+              onClick={() => navigate(isAuthenticated ? "/dashboard" : "/login")}
+              className="cursor-pointer"
+              style={{
+                ...mono, fontSize: 12, fontWeight: 600,
+                color: "#050505", backgroundColor: "rgba(255,255,255,0.26)",
+                border: "1px solid rgba(5,5,5,0.16)",
+                padding: "18px 28px", borderRadius: 4,
+                transition: "transform 0.2s ease-out, box-shadow 0.2s ease-out",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.12)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+            >
+              {isAuthenticated ? "View Dashboard" : "Sign In"}
+            </button>
+          </div>
         </FadeIn>
       </div>
     </section>

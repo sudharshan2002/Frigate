@@ -7,7 +7,7 @@ const mono: React.CSSProperties = {
   letterSpacing: "0.08em",
 };
 
-type AppPageId = "composer" | "what-if" | "dashboard";
+type AppPageId = "composer" | "what-if" | "dashboard" | "profile";
 
 const pageLinks: Record<AppPageId, { label: string; to: string }> = {
   composer: {
@@ -21,6 +21,10 @@ const pageLinks: Record<AppPageId, { label: string; to: string }> = {
   dashboard: {
     label: "Dashboard",
     to: "/dashboard",
+  },
+  profile: {
+    label: "Profile",
+    to: "/profile",
   },
 };
 

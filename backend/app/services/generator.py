@@ -7,14 +7,14 @@ import base64
 import io
 import json
 import logging
-from datetime import datetime, timezone
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Any
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-from app.schemas.api import ReferenceImageInput, GenerateResponse, PromptExplanationSummary, SessionRecord, TokenImpact, GeneratedArtifacts
+from app.schemas.api import ReferenceImageInput
 from app.utils.helpers import build_mock_image_output, build_mock_text_output, trim_text
 from config import Settings
 
@@ -392,7 +392,7 @@ class GenerationEngine:
             return None
 
     def _run_hf_vision_caption(self, reference_image: ReferenceImageInput) -> str:
-        image_url = reference_image.url or reference_image.data_url
+        image_url = self._reference_image_to_model_input(reference_image)
         if not image_url:
             raise ValueError("Reference image requires either a url or data_url")
 
@@ -450,8 +450,7 @@ class GenerationEngine:
             return f"{prefix} {reference_caption}"
         return base_prompt
 
-    @staticmethod
-    def _reference_image_to_bytes(reference_image: ReferenceImageInput) -> bytes:
+    def _reference_image_to_bytes(self, reference_image: ReferenceImageInput) -> bytes:
         if reference_image.data_url:
             header, _, encoded = reference_image.data_url.partition(",")
             if ";base64" not in header:
@@ -459,6 +458,7 @@ class GenerationEngine:
             return base64.b64decode(encoded)
 
         if reference_image.url:
+            self._validate_remote_reference_image_url(reference_image.url)
             request = Request(reference_image.url, method="GET")
             try:
                 with urlopen(request, timeout=30) as response:
@@ -469,6 +469,28 @@ class GenerationEngine:
                 raise RuntimeError(f"Reference image download failed: {exc.reason}") from exc
 
         raise ValueError("Reference image requires either a data_url or a url")
+
+    def _reference_image_to_model_input(self, reference_image: ReferenceImageInput) -> str:
+        if reference_image.data_url:
+            return reference_image.data_url
+        if reference_image.url:
+            self._validate_remote_reference_image_url(reference_image.url)
+            return reference_image.url
+        raise ValueError("Reference image requires either a data_url or a url")
+
+    def _validate_remote_reference_image_url(self, value: str) -> None:
+        if not self.settings.allow_remote_reference_images:
+            raise ValueError("Remote reference image URLs are disabled. Upload the image directly instead.")
+
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"}:
+            raise ValueError("Reference image URLs must use http or https.")
+
+        hostname = (parsed.hostname or "").strip().lower()
+        if not hostname:
+            raise ValueError("Reference image URL must include a hostname.")
+        if hostname in {"localhost", "127.0.0.1", "::1"} or hostname.endswith(".local"):
+            raise ValueError("Reference image URL host is not allowed.")
 
     @staticmethod
     def _image_to_data_url(image: Any) -> str:

@@ -39,8 +39,14 @@ async def lifespan(app: FastAPI):
     generator = GenerationEngine(settings)
     segmenter = PromptSegmenter(settings)
     explainer = ExplainabilityService(settings)
-    metrics_service = MetricsService(settings.sqlite_db_path)
-    session_service = SessionService(settings.sqlite_db_path)
+    metrics_service = MetricsService(
+        settings.sqlite_db_path,
+        enabled=settings.enable_session_history,
+    )
+    session_service = SessionService(
+        settings.sqlite_db_path,
+        enabled=settings.enable_session_history,
+    )
     heatmap_engine = HeatmapEngine(settings)
     metrics_engine = MetricsEngine()
     whatif_engine = WhatIfEngine(generator)

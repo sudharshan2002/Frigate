@@ -1,3 +1,5 @@
+import { supabase } from "./supabase";
+
 const API_ROOT = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_ROOT}/api`;
 const tokenPattern = /\b[\w'-]+\b/g;
@@ -160,16 +162,30 @@ function demoModeMessage() {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   const response = await fetch(`${API_PREFIX}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
       ...(init?.headers || {}),
     },
     ...init,
   });
 
   if (!response.ok) {
-    const detail = await response.text();
+    const raw = await response.text();
+    let detail = raw;
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.detail === "string") {
+        detail = parsed.detail;
+      }
+    } catch {
+      // Fall back to the raw response body when the backend did not return JSON.
+    }
     throw new Error(detail || `Request failed with status ${response.status}`);
   }
 
