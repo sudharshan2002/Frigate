@@ -1,13 +1,15 @@
 
 ## Running the code
 
-Run `npm i` to install the frontend dependencies.
+Run `npm i` from the project root to install the frontend dependencies.
 
-Run `npm run dev` to start the Vite site.
+Run `npm run dev` from the project root to start the Vite site.
 
 Set `VITE_DEMO_MODE=true` in `.env.local` if you want the frontend to use seeded demo data without calling the backend.
 
 The frontend expects the FastAPI backend at `http://127.0.0.1:8000` unless `VITE_API_URL` is set in `.env.local`.
+
+The Vite app now lives in `frontend/`, but the root scripts still proxy to it so the local workflow stays the same.
 
 ## Running the backend locally
 

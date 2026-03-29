@@ -1,0 +1,10 @@
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+
+[windows]
+sandbox = "elevated"
+
+[mcp_servers.TestSprite]
+command = "npx"
+args = ["@testsprite/testsprite-mcp@latest"]
+env = { API_KEY = "sk-user-NTG_3sDdFAyOWAD3t0lG4BnGQaQIvEaMPSRLyHcRQysqTZCi_prv9dIUaEb_1CSI9gMMzA6zSgyoJHyOJ7onfhwuLjcYDmZ7SMsVkFfeAIRFBK1ndwYnpggoN0cAlmEo2f0" }
