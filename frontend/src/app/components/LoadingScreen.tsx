@@ -11,30 +11,29 @@ export function LoadingScreen({ visible }: { visible: boolean }) {
     hidden: { y: "100%" },
     show: (i: number) => ({
       y: "0%",
-      transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as any, delay: i * 0.06 }
+      transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as any, delay: i * 0.045 }
     }),
     exit: (i: number) => ({
       y: "-100%",
-      transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as any, delay: 0.12 + i * 0.06 }
+      transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] as any, delay: 0.08 + i * 0.045 }
     }),
   };
 
   const logoVariants: Variants = {
-    hidden: { opacity: 0, scale: 2.2 },
+    hidden: { opacity: 0, scale: 1.4 },
     show: {
       opacity: 1,
       scale: 1,
       transition: {
-        type: "spring",
-        stiffness: 420,
-        damping: 20,
-        delay: 0.34
+        duration: 0.34,
+        ease: [0.16, 1, 0.3, 1] as any,
+        delay: 0.2
       } 
     },
     exit: {
       opacity: 0,
-      scale: 0.9,
-      transition: { duration: 0.18, ease: "easeIn" as any }
+      scale: 0.96,
+      transition: { duration: 0.14, ease: "easeIn" as any }
     }
   };
 

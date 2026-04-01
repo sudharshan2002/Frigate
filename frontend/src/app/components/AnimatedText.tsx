@@ -1,7 +1,8 @@
 import { Fragment, type CSSProperties } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 const ease = [0.16, 1, 0.3, 1] as const;
+const viewport = { once: true, amount: 0.12, margin: "0px 0px -8% 0px" } as const;
 
 export function WordReveal({
   text,
@@ -14,6 +15,7 @@ export function WordReveal({
   lineGap?: string;
   style?: CSSProperties;
 }) {
+  const prefersReducedMotion = useReducedMotion();
   const words = text.trim().split(/\s+/);
 
   return (
@@ -22,9 +24,13 @@ export function WordReveal({
         <Fragment key={`${word}-${index}`}>
           <motion.span
             style={{ display: "inline-block", whiteSpace: "pre" }}
-            initial={{ opacity: 0, y: "0.9em" }}
+            initial={{ opacity: 0, y: prefersReducedMotion ? 0 : "0.72em" }}
             animate={{ opacity: 1, y: "0em" }}
-            transition={{ duration: 0.65, ease, delay: delay + index * 0.06 }}
+            transition={{
+              duration: prefersReducedMotion ? 0.22 : 0.56,
+              ease,
+              delay: delay + index * 0.05,
+            }}
           >
             {word}
           </motion.span>
@@ -46,12 +52,14 @@ export function FadeSlideText({
   distance?: number;
   style?: CSSProperties;
 }) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <motion.span
       style={{ display: "block", ...style }}
-      initial={{ opacity: 0, y: distance }}
+      initial={{ opacity: 0, y: prefersReducedMotion ? 0 : distance }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.58, ease, delay }}
+      transition={{ duration: prefersReducedMotion ? 0.2 : 0.5, ease, delay }}
     >
       {children}
     </motion.span>
@@ -71,16 +79,17 @@ export function FadeIn({
   direction?: "up" | "down" | "none";
   style?: CSSProperties;
 }) {
+  const prefersReducedMotion = useReducedMotion();
   const initialY = direction === "none" ? 0 : direction === "down" ? -16 : 16;
 
   return (
     <motion.div
       className={className}
       style={style}
-      initial={{ opacity: 0, y: initialY }}
+      initial={{ opacity: 0, y: prefersReducedMotion ? 0 : initialY }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12, margin: "0px 0px -10% 0px" }}
-      transition={{ duration: 0.58, ease, delay }}
+      viewport={viewport}
+      transition={{ duration: prefersReducedMotion ? 0.22 : 0.52, ease, delay }}
     >
       {children}
     </motion.div>
@@ -96,22 +105,25 @@ export function AnimatedHeadline({
   className?: string;
   delay?: number;
 }) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.18, margin: "0px 0px -10% 0px" }}
-      transition={{ duration: 0.72, ease, delay }}
+      initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: prefersReducedMotion ? 0.24 : 0.54, ease, delay }}
     >
-      <motion.div
-        initial={{ clipPath: "inset(0 0 100% 0)" }}
-        whileInView={{ clipPath: "inset(0 0 0% 0)" }}
-        viewport={{ once: true, amount: 0.18, margin: "0px 0px -10% 0px" }}
-        transition={{ duration: 0.8, ease, delay: delay + 0.06 }}
-      >
-        {children}
-      </motion.div>
+      <div style={{ display: "block", overflow: "hidden" }}>
+        <motion.div
+          initial={{ opacity: 0, y: prefersReducedMotion ? 0 : "0.78em" }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: prefersReducedMotion ? 0.24 : 0.62, ease, delay: delay + 0.04 }}
+          style={{ willChange: prefersReducedMotion ? "auto" : "transform, opacity" }}
+        >
+          {children}
+        </motion.div>
+      </div>
     </motion.div>
   );
 }

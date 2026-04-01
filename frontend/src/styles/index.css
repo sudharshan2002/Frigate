@@ -75,8 +75,18 @@ body,
   min-height: 100%;
 }
 
+html {
+  background-color: #050505;
+  scroll-behavior: smooth;
+}
+
 body {
   overflow-x: hidden;
+  background-color: #050505;
+  color: #050505;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 img,
@@ -144,8 +154,13 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+::selection {
+  background: #d1ff00;
+  color: #050505;
+}
+
 .grain-animated {
-  animation: grain-shift 7s steps(10) infinite;
+  animation: grain-shift 14s steps(6) infinite;
   will-change: background-position;
 }
 
@@ -387,6 +402,17 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
   .menu-rolling-link__track,
   .menu-glitch-link,
   .menu-glitch-link__label-wrap::before,
