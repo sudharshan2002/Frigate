@@ -1,4 +1,4 @@
-"""Perturbation-based what-if engine for explainable prompt analysis."""
+"""What-if analysis engine for prompt comparison."""
 
 from __future__ import annotations
 
@@ -150,7 +150,7 @@ class WhatIfEngine:
                 VariationPlan(
                     removed=object_text,
                     prompt_variant=prompt.replace(object_text, "subject", 1) if object_text in prompt else f"subject {prompt}",
-                    explanation="The main object anchor was softened, so focal intent should shift the most.",
+                    explanation="The main object was softened, so the biggest visible change should happen there.",
                     weight=0.92,
                 )
             )

@@ -35,7 +35,7 @@ function BlurReveal({
       className={className}
       initial={{ opacity: 0, y: 28, filter: "blur(12px)" }}
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, amount: 0.25 }}
+      viewport={{ once: true, amount: 0.12, margin: "0px 0px -10% 0px" }}
       transition={{ duration: 0.85, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
@@ -224,7 +224,7 @@ function Hero() {
                 fontSize: "clamp(0.9rem, 1vw, 15px)",
                 lineHeight: "1.6",
                 color: "#F4F4E8",
-                opacity: 0.5,
+                opacity: 0.72,
                 maxWidth: 440,
                 marginBottom: 60
               }}
@@ -311,7 +311,7 @@ function Hero() {
               animate={prefersReducedMotion ? undefined : { opacity: [0.78, 1, 0.78] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             >
-              <span className="opacity-60">PROMPTS SHOULD BE REVIEWABLE.</span> <span className="font-bold opacity-100">FRIGATE KEEPS THE DECISION PATH VISIBLE.</span>
+              <span className="opacity-75">PROMPTS SHOULD BE REVIEWABLE.</span> <span className="font-bold opacity-100">FRIGATE KEEPS THE DECISION PATH VISIBLE.</span>
             </motion.div>
 
             <motion.div

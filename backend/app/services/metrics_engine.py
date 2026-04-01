@@ -1,4 +1,4 @@
-"""Heuristic metrics engine for explainable generation."""
+"""Heuristic metrics used by the app."""
 
 from __future__ import annotations
 

@@ -39,11 +39,11 @@ class ImageDiffEngine:
 
         summary_parts: list[str] = []
         if similarity < 0.62:
-            summary_parts.append("The visual steering instructions shifted heavily.")
+            summary_parts.append("The image changed a lot after the prompt edit.")
         elif similarity < 0.8:
-            summary_parts.append("The visual steering instructions changed noticeably.")
+            summary_parts.append("The image changed noticeably after the prompt edit.")
         else:
-            summary_parts.append("The visual steering instructions stayed fairly close.")
+            summary_parts.append("The image stayed fairly close to the original.")
         if alignment_shift > 0.18:
             summary_parts.append("Prompt-to-image alignment moved by a meaningful amount.")
 

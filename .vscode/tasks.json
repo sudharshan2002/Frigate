@@ -17,7 +17,7 @@
       "problemMatcher": []
     },
     {
-      "label": "Train FrigateScore Regressor",
+      "label": "Train FrigateScore Regressor (CPU)",
       "type": "shell",
       "command": "powershell",
       "args": [
@@ -28,26 +28,7 @@
         "-Epochs",
         "1",
         "-RunName",
-        "distilbert-v1"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Train FrigateScore Regressor (CPU Safe)",
-      "type": "shell",
-      "command": "powershell",
-      "args": [
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "training/run_score_regressor_training.ps1",
-        "-Epochs",
-        "1",
-        "-RunName",
-        "distilbert-v1-cpu",
+        "distilbert-v1",
         "-ForceCpu"
       ],
       "options": {
@@ -56,7 +37,7 @@
       "problemMatcher": []
     },
     {
-      "label": "Train FrigateScore Regressor + Output Text",
+      "label": "Train FrigateScore Regressor + Output Text (CPU)",
       "type": "shell",
       "command": "powershell",
       "args": [
@@ -68,7 +49,8 @@
         "1",
         "-RunName",
         "distilbert-output-v1",
-        "-IncludeOutputText"
+        "-IncludeOutputText",
+        "-ForceCpu"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -76,7 +58,7 @@
       "problemMatcher": []
     },
     {
-      "label": "Train Frigate Segmenter (1 epoch)",
+      "label": "Train Frigate Segmenter (1 epoch, CPU)",
       "type": "shell",
       "command": "powershell",
       "args": [
@@ -87,7 +69,8 @@
         "-RunName",
         "epoch1-baseline",
         "-Epochs",
-        "1"
+        "1",
+        "-ForceCpu"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -95,7 +78,7 @@
       "problemMatcher": []
     },
     {
-      "label": "Train Frigate Segmenter (3 epochs)",
+      "label": "Train Frigate Segmenter (3 epochs, CPU)",
       "type": "shell",
       "command": "powershell",
       "args": [
@@ -105,25 +88,6 @@
         "training/run_segmenter_training.ps1",
         "-RunName",
         "epoch3-overnight",
-        "-Epochs",
-        "3"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Train Frigate Segmenter (3 epochs, CPU Safe)",
-      "type": "shell",
-      "command": "powershell",
-      "args": [
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "training/run_segmenter_training.ps1",
-        "-RunName",
-        "epoch3-overnight-cpu",
         "-Epochs",
         "3",
         "-ForceCpu"
@@ -172,6 +136,36 @@
         "Bypass",
         "-Command",
         "& .\\venv\\Scripts\\python.exe training\\scripts\\evaluate_traditional_scorers.py --mode manifest-linear --input data\\public\\processed\\frigate_score_test_3way.csv --manifest models\\frigatescore\\manifest.json --output training\\artifacts\\score_metrics_manifest_linear_test.json"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Evaluate Heuristic FrigateScore (Gold test)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& .\\venv\\Scripts\\python.exe training\\scripts\\evaluate_traditional_scorers.py --mode heuristic --input data\\public\\processed\\frigate_score_gold_test.csv --output training\\artifacts\\score_metrics_heuristic_gold_test.json"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Evaluate Linear FrigateScore (Gold test)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& .\\venv\\Scripts\\python.exe training\\scripts\\evaluate_traditional_scorers.py --mode manifest-linear --input data\\public\\processed\\frigate_score_gold_test.csv --manifest models\\frigatescore\\manifest.json --output training\\artifacts\\score_metrics_manifest_linear_gold_test.json"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -246,7 +240,7 @@
         "-ExecutionPolicy",
         "Bypass",
         "-Command",
-        "& .\\venv\\Scripts\\python.exe training\\scripts\\compare_score_models.py --baseline training\\artifacts\\score_metrics_manifest_linear_test.json --candidate training\\artifacts\\score_regressor_metrics_distilbert-gold-cpu.json --output training\\artifacts\\score_comparison_linear_vs_gold_cpu.json"
+        "& .\\venv\\Scripts\\python.exe training\\scripts\\compare_score_models.py --baseline training\\artifacts\\score_metrics_manifest_linear_gold_test.json --candidate training\\artifacts\\score_regressor_metrics_distilbert-gold-cpu.json --output training\\artifacts\\score_comparison_linear_vs_gold_cpu.json"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -261,7 +255,7 @@
         "-ExecutionPolicy",
         "Bypass",
         "-Command",
-        "& .\\venv\\Scripts\\python.exe training\\scripts\\compare_score_models.py --baseline training\\artifacts\\score_metrics_manifest_linear_test.json --candidate training\\artifacts\\score_regressor_metrics_distilbert-goldmix-cpu.json --output training\\artifacts\\score_comparison_linear_vs_goldmix_cpu.json"
+        "& .\\venv\\Scripts\\python.exe training\\scripts\\compare_score_models.py --baseline training\\artifacts\\score_metrics_manifest_linear_gold_test.json --candidate training\\artifacts\\score_regressor_metrics_distilbert-goldmix-cpu.json --output training\\artifacts\\score_comparison_linear_vs_goldmix_cpu.json"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

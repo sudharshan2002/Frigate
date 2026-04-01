@@ -65,7 +65,7 @@ function BlurReveal({
       className={className}
       initial={{ opacity: 0, y: 28, filter: "blur(12px)" }}
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, amount: 0.22 }}
+      viewport={{ once: true, amount: 0.12, margin: "0px 0px -10% 0px" }}
       transition={{ duration: 0.85, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
@@ -162,7 +162,7 @@ function ContactHero() {
                   fontFamily: "Inter, sans-serif",
                   fontSize: "clamp(1rem, 1.2vw, 1.12rem)",
                   lineHeight: 1.5,
-                  color: "rgba(244,244,232,0.68)",
+                  color: "rgba(244,244,232,0.82)",
                   maxWidth: 560,
                   margin: "28px 0 0 0",
                 }}
@@ -226,13 +226,13 @@ function ContactHero() {
                 style={{ background: "linear-gradient(90deg, #D1FF00 0%, rgba(209,255,0,0.15) 100%)" }}
               />
 
-              <div style={{ ...mono, fontSize: 10, color: "rgba(244,244,232,0.5)", marginBottom: 24 }}>
+              <div style={{ ...mono, fontSize: 10, color: "rgba(244,244,232,0.7)", marginBottom: 24 }}>
                 [Direct Lines]
               </div>
 
               <div className="space-y-6">
                 <div>
-                  <div style={{ ...mono, fontSize: 9, color: "rgba(244,244,232,0.42)", marginBottom: 8 }}>
+                  <div style={{ ...mono, fontSize: 9, color: "rgba(244,244,232,0.62)", marginBottom: 8 }}>
                     Primary Inbox
                   </div>
                   <a
@@ -256,7 +256,7 @@ function ContactHero() {
                     style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}
                   >
                     <Mail size={15} style={{ color: palette.lime, marginTop: 2 }} />
-                    <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.62)" }}>
+                    <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.78)" }}>
                       Best for general questions about the app.
                     </p>
                   </div>
@@ -266,7 +266,7 @@ function ContactHero() {
                     style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}
                   >
                     <CalendarRange size={15} style={{ color: palette.lime, marginTop: 2 }} />
-                    <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.62)" }}>
+                    <p style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5, color: "rgba(244,244,232,0.78)" }}>
                       Helpful context: what you are trying to do and what went wrong.
                     </p>
                   </div>

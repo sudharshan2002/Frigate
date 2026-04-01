@@ -1,4 +1,4 @@
-"""Central orchestrator for the explainable multimodal pipeline."""
+"""Coordinate the main prompt analysis and generation flow."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class XAIOrchestrator:
-    """Coordinate segmentation, generation, explainability, what-if analysis, and metrics."""
+    """Coordinate segmentation, generation, comparison, and scoring."""
 
     def __init__(
         self,
@@ -66,7 +66,7 @@ class XAIOrchestrator:
         request_id: str | None = None,
         actor_key: str = "guest:anonymous",
     ) -> GenerateResponse:
-        """Run the full explainable generation pipeline."""
+        """Run the full request pipeline for one prompt."""
         started_at = perf_counter()
         reference_image_used = payload.reference_image is not None
         prompt_for_session = payload.prompt.strip() or "Reference-image-driven generation"
@@ -163,7 +163,7 @@ class XAIOrchestrator:
             )
         )
 
-        logger.info("Generated explainable %s response in %.2f ms", payload.mode, total_latency_ms)
+        logger.info("Generated %s response in %.2f ms", payload.mode, total_latency_ms)
         return GenerateResponse(
             output=primary_output,
             provider=primary_provider,
@@ -205,9 +205,9 @@ class XAIOrchestrator:
             modified_prompt=payload.modified_prompt,
         )
         if payload.original_reference_image and not payload.modified_reference_image:
-            difference = f"{difference} Variant B removes the reference image anchor."
+            difference = f"{difference} Variant B removes the reference image guide."
         elif payload.modified_reference_image and not payload.original_reference_image:
-            difference = f"{difference} Variant B adds a reference image anchor."
+            difference = f"{difference} Variant B adds a reference image guide."
 
         original_prompt = payload.original_prompt.strip() or "Reference-image-driven generation"
         modified_prompt = payload.modified_prompt.strip() or "Reference-image-driven generation"
@@ -366,19 +366,14 @@ class XAIOrchestrator:
 
     def analyze_prompt(self, payload: AnalyzeRequest) -> AnalyzeResponse:
         """Perform real-time NLP segmentation and explanation summary."""
-        if self.generator.nlp_analyzer is not None:
-            segments = self.generator.nlp_analyzer.analyze_prompt(payload.prompt)
-            profile = self.segmenter.segment(payload.prompt, reference_image_used=False)
-        else:
-            profile = self.segmenter.segment(payload.prompt, reference_image_used=False)
-            segments = self.explainer.analyze_prompt(
-                prompt=payload.prompt,
-                output=payload.prompt,
-                mode=payload.mode,
-                segment_profile=profile,
-                reference_image_used=False,
-            ).segments
-
+        profile = self.segmenter.segment(payload.prompt, reference_image_used=False)
+        analysis = self.explainer.analyze_prompt(
+            prompt=payload.prompt,
+            output=payload.prompt,
+            mode=payload.mode,
+            segment_profile=profile,
+            reference_image_used=False,
+        )
         score_details = self.prompt_ml_scorer.score(
             prompt=payload.prompt,
             output=payload.prompt,
@@ -386,18 +381,10 @@ class XAIOrchestrator:
             segment_profile=profile,
             reference_image_used=False,
         )
-        
-        # Build a live explanation summary
-        strongest = segments[0].label.lower() if segments else "subject"
-        summary = PromptExplanationSummary(
-            overview="Frigate is reading this draft as a stack of steering instructions.",
-            segment_strategy=f"The draft is currently led by the {strongest} layer.",
-            improvement_tip="Add one more concrete clause for clearer separation.",
-        )
 
         return AnalyzeResponse(
-            segments=segments,
-            explanation_summary=summary,
+            segments=analysis.segments,
+            explanation_summary=analysis.summary,
             score_details=score_details,
         )
 

@@ -1,4 +1,4 @@
-"""Prompt segmentation engine with spaCy-first and heuristic fallback behavior."""
+"""Prompt segmentation with trained, spaCy, and heuristic paths."""
 
 from __future__ import annotations
 
@@ -31,6 +31,14 @@ STYLE_KEYWORDS = {
     "dark",
     "moody",
     "clean",
+    "friendly",
+    "professional",
+    "formal",
+    "casual",
+    "playful",
+    "warm",
+    "confident",
+    "concise",
 }
 LIGHTING_KEYWORDS = {
     "lighting",
@@ -46,6 +54,10 @@ LIGHTING_KEYWORDS = {
     "night",
 }
 ATTRIBUTE_KEYWORDS = {
+    "short",
+    "brief",
+    "long",
+    "engaging",
     "red",
     "blue",
     "green",
@@ -61,11 +73,26 @@ ATTRIBUTE_KEYWORDS = {
     "detailed",
     "high-resolution",
 }
-ENVIRONMENT_PREFIXES = ("in ", "on ", "at ", "inside ", "outside ", "under ", "against ", "near ", "beside ")
+OUTPUT_KEYWORDS = {
+    "email",
+    "article",
+    "post",
+    "caption",
+    "headline",
+    "summary",
+    "message",
+    "description",
+    "script",
+    "proposal",
+    "report",
+    "bio",
+}
+ENVIRONMENT_PREFIXES = ("in ", "on ", "at ", "inside ", "outside ", "under ", "against ", "near ", "beside ", "around ", "through ", "across ")
+RELATION_PREFIXES = ("with ", "featuring ", "alongside ")
 
 
 class PromptSegmenter:
-    """Extract object, attributes, style, and environment from a prompt."""
+    """Extract the main prompt parts from a prompt."""
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -73,7 +100,7 @@ class PromptSegmenter:
         self._nlp = self._load_spacy_pipeline()
 
     def segment(self, prompt: str, *, reference_image_used: bool = False) -> PromptSegmentProfile:
-        """Segment a prompt into explainable components."""
+        """Split a prompt into object, detail, style, and context fields."""
         normalized = " ".join((prompt or "").split())
         if not normalized and reference_image_used:
             return PromptSegmentProfile(
@@ -111,8 +138,16 @@ class PromptSegmenter:
 
     def _segment_with_spacy(self, prompt: str, *, reference_image_used: bool) -> PromptSegmentProfile:
         doc = self._nlp(prompt)
-        noun_chunks = [chunk.text.strip(" ,.") for chunk in getattr(doc, "noun_chunks", [])]
-        object_text = trim_text(noun_chunks[0], 240) if noun_chunks else None
+        noun_chunks = [
+            chunk.text.strip(" ,.")
+            for chunk in getattr(doc, "noun_chunks", [])
+            if chunk.text.strip(" ,.") and chunk.root.pos_ != "PRON"
+        ]
+        object_candidate = next(
+            (chunk for chunk in noun_chunks if any(keyword in chunk.lower() for keyword in OUTPUT_KEYWORDS)),
+            noun_chunks[0] if noun_chunks else None,
+        )
+        object_text = trim_text(object_candidate, 240) if object_candidate else None
 
         attributes: list[str] = []
         style: list[str] = []
@@ -121,8 +156,11 @@ class PromptSegmenter:
 
         for token in doc:
             lowered = token.text.lower()
-            if token.pos_ == "ADJ" and token.head.text in (object_text or ""):
-                attributes.append(token.text)
+            if token.pos_ == "ADJ" and token.dep_ != "punct":
+                if lowered in STYLE_KEYWORDS:
+                    style.append(token.text)
+                else:
+                    attributes.append(token.text)
             if lowered in STYLE_KEYWORDS:
                 style.append(token.text)
             if lowered in LIGHTING_KEYWORDS:
@@ -132,7 +170,7 @@ class PromptSegmenter:
 
         for chunk in noun_chunks[1:]:
             lowered = chunk.lower()
-            if lowered.startswith(ENVIRONMENT_PREFIXES) or any(prefix in lowered for prefix in ("background", "scene", "landscape")):
+            if lowered.startswith("for ") or lowered.startswith(ENVIRONMENT_PREFIXES) or any(prefix in lowered for prefix in ("background", "scene", "landscape")):
                 environment.append(chunk)
 
         for sentence in doc.sents:
@@ -140,8 +178,17 @@ class PromptSegmenter:
             lowered = text.lower()
             if any(lowered.startswith(prefix) for prefix in ENVIRONMENT_PREFIXES):
                 environment.append(text)
+            if lowered.startswith("for "):
+                environment.append(text)
             if "style" in lowered:
                 style.append(text)
+            tone_match = re.search(r"\b(?:keep it|make it|in a|with a)\s+([a-zA-Z-]+(?:\s+[a-zA-Z-]+){0,2})", lowered)
+            if tone_match:
+                style.append(tone_match.group(1))
+
+        audience_match = re.search(r"\bfor\s+([^,.]+)", prompt, flags=re.IGNORECASE)
+        if audience_match:
+            environment.append(f"for {audience_match.group(1).strip()}")
 
         return PromptSegmentProfile(
             object=object_text or trim_text(prompt, 240),
@@ -162,12 +209,21 @@ class PromptSegmenter:
         lighting = [token for token in tokens if token.lower() in LIGHTING_KEYWORDS]
         attributes = [token for token in tokens if token.lower() in ATTRIBUTE_KEYWORDS]
         environment = [
-            clause for clause in clauses if clause.lower().startswith(ENVIRONMENT_PREFIXES) or "background" in clause.lower()
+            clause
+            for clause in clauses
+            if clause.lower().startswith(ENVIRONMENT_PREFIXES) or "background" in clause.lower()
         ]
 
         object_text = None
         if clauses:
-            first_clause = clauses[0]
+            preferred_clause = next(
+                (clause for clause in clauses if any(keyword in clause.lower() for keyword in OUTPUT_KEYWORDS)),
+                clauses[0],
+            )
+            first_clause = re.sub(r"^(write|create|design|generate|draft|craft|compose)\s+", "", preferred_clause, flags=re.IGNORECASE)
+            relation_parts = re.split(r"\b(?:with|featuring|alongside)\b", first_clause, maxsplit=1, flags=re.IGNORECASE)
+            if relation_parts:
+                first_clause = relation_parts[0].strip(" ,.")
             lowered_first = first_clause.lower()
             for prefix in ("with ", "in ", "on ", "at "):
                 if lowered_first.startswith(prefix):
@@ -180,8 +236,27 @@ class PromptSegmenter:
 
         if "style" in lowered:
             style.extend(re.findall(r"([a-zA-Z-]+\s+style)", prompt, flags=re.IGNORECASE))
+        style.extend(re.findall(r"\b(?:keep it|make it|in a|with a)\s+([a-zA-Z-]+(?:\s+[a-zA-Z-]+){0,2})", lowered))
+        environment.extend([f"for {match.strip()}" for match in re.findall(r"\bfor\s+([^,.]+)", prompt, flags=re.IGNORECASE)])
+        environment.extend([
+            f"{prefix.strip()} {value.strip()}".strip()
+            for prefix, value in re.findall(
+                r"\b(around|through|across|inside|outside|near|beside)\s+([^,.]+)",
+                prompt,
+                flags=re.IGNORECASE,
+            )
+        ])
+        attributes.extend([
+            f"with {match.strip()}"
+            for match in re.findall(
+                r"\bwith\s+([^,.]+?)(?=\s+(?:around|through|across|inside|outside|near|beside|in|on|at)\b|$)",
+                prompt,
+                flags=re.IGNORECASE,
+            )
+        ])
+        attributes.extend([match.strip() for match in re.findall(r"\b([a-z]+ing)\b", lowered)])
 
-        attribute_phrases = re.findall(r"\b(red|blue|green|gold|silver|sleek|glossy|matte|detailed)\b(?:\s+\w+)?", lowered)
+        attribute_phrases = re.findall(r"\b(short|brief|long|engaging|red|blue|green|gold|silver|sleek|glossy|matte|detailed)\b(?:\s+\w+)?", lowered)
         attributes.extend(attribute_phrases)
 
         return PromptSegmentProfile(
@@ -229,12 +304,22 @@ class PromptSegmenter:
         spacy: PromptSegmentProfile | None,
         heuristic: PromptSegmentProfile,
     ) -> PromptSegmentProfile:
-        candidates = [profile for profile in (trained, spacy, heuristic) if profile is not None]
+        candidates = [
+            profile
+            for profile in (trained, spacy, heuristic)
+            if profile is not None and not PromptSegmenter._is_low_signal_profile(profile, prompt)
+        ]
+        if not candidates:
+            candidates = [heuristic]
 
         def score_object(value: str | None) -> tuple[int, int]:
             cleaned = trim_text(value or "", 240)
             token_count = len(tokenize_text(cleaned))
-            return (token_count, len(cleaned))
+            if not cleaned:
+                return (0, 0)
+            keyword_bonus = 5 if any(keyword in cleaned.lower() for keyword in OUTPUT_KEYWORDS) else 0
+            concise_bonus = max(0, 10 - min(token_count, 10))
+            return (keyword_bonus + concise_bonus, -len(cleaned))
 
         object_text = max(
             (profile.object for profile in candidates),
@@ -258,6 +343,13 @@ class PromptSegmenter:
         for group in groups:
             merged.extend(group)
         return dedupe_preserve_order(merged)
+
+    @staticmethod
+    def _is_low_signal_profile(profile: PromptSegmentProfile, prompt: str) -> bool:
+        object_text = trim_text(profile.object or "", 240).lower()
+        normalized_prompt = trim_text(prompt, 240).lower()
+        has_secondary = bool(profile.attributes or profile.style or profile.environment or profile.lighting)
+        return not has_secondary and object_text == normalized_prompt
 
     @staticmethod
     def _load_spacy_pipeline():

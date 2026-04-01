@@ -79,7 +79,7 @@ export function FadeIn({
       style={style}
       initial={{ opacity: 0, y: initialY }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
+      viewport={{ once: true, amount: 0.12, margin: "0px 0px -10% 0px" }}
       transition={{ duration: 0.58, ease, delay }}
     >
       {children}
@@ -101,13 +101,13 @@ export function AnimatedHeadline({
       className={className}
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.35 }}
+      viewport={{ once: true, amount: 0.18, margin: "0px 0px -10% 0px" }}
       transition={{ duration: 0.72, ease, delay }}
     >
       <motion.div
         initial={{ clipPath: "inset(0 0 100% 0)" }}
         whileInView={{ clipPath: "inset(0 0 0% 0)" }}
-        viewport={{ once: true, amount: 0.35 }}
+        viewport={{ once: true, amount: 0.18, margin: "0px 0px -10% 0px" }}
         transition={{ duration: 0.8, ease, delay: delay + 0.06 }}
       >
         {children}

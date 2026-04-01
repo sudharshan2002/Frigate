@@ -110,12 +110,12 @@ function buildExplanationText(segment: PromptSegment, mode: GenerationMode) {
     return segment.effect;
   }
   if (segment.impact >= 0.85) {
-    return `"${segment.text}" is acting like a primary steering segment and is strongly shaping the ${mode === "image" ? "composition" : "draft direction"}.`;
+    return `"${segment.text}" is the main driver here and is strongly shaping the ${mode === "image" ? "image structure" : "draft direction"}.`;
   }
   if (segment.impact >= 0.65) {
     return `"${segment.text}" is reinforcing the tone and helping the system stay aligned with the prompt's main intent.`;
   }
-  return `"${segment.text}" is providing secondary context that supports the final ${mode === "image" ? "visual treatment" : "wording"}, but with lower leverage.`;
+    return `"${segment.text}" adds supporting context for the final ${mode === "image" ? "image" : "wording"}, but with lower impact.`;
 }
 
 export function ComposerPage() {
@@ -173,7 +173,7 @@ export function ComposerPage() {
     }));
   }, [result]);
 
-  // Live NLP Segmentation with Debounce
+  // Update the live prompt breakdown after the user pauses typing.
   useEffect(() => {
     if (!prompt.trim()) {
       setLiveResult(null);
@@ -223,6 +223,46 @@ export function ComposerPage() {
 
   const segments = isDraftDirty ? draftSegments : resultSegments;
   const explanationSummary = isDraftDirty ? (liveResult?.summary || buildDraftExplanationSummary(prompt, mode)) : result?.explanation_summary;
+  const activeScoreDetails = isDraftDirty ? liveResult?.scoreDetails : result?.score_details;
+  const segmentByKind = useMemo(() => {
+    const output = new Map<string, PromptSegment>();
+    for (const segment of segments) {
+      if (!output.has(segment.kind)) {
+        output.set(segment.kind, segment);
+      }
+    }
+    return output;
+  }, [segments]);
+  const primarySegment = segments[0] || null;
+  const topSegments = segments.slice(0, 4);
+  const explanationRows = topSegments.map((segment) => ({
+    label: segment.label,
+    text: segment.text,
+    effect: buildExplanationText(segment, mode),
+    influence: Math.round((segment.influence ?? segment.impact ?? 0) * 100),
+  }));
+  const explainabilityCards = [
+    {
+      label: "Primary Driver",
+      value: primarySegment?.text || "Enter a prompt to begin",
+      sub: primarySegment?.label || "Object",
+    },
+    {
+      label: "Style / Tone",
+      value: segmentByKind.get("style")?.text || "Not specified yet",
+      sub: "How the output should feel",
+    },
+    {
+      label: "Context",
+      value: segmentByKind.get("environment")?.text || "No explicit context",
+      sub: "Audience, scene, or setting",
+    },
+    {
+      label: "Score Source",
+      value: scoreSourceLabel(activeScoreDetails),
+      sub: activeScoreDetails?.model_name || "Live session analysis",
+    },
+  ];
 
   const guidedFeedback = useMemo(() => {
     if (isDraftDirty) {
@@ -235,7 +275,7 @@ export function ComposerPage() {
     const strongestToken = segments[0]?.label || segments[0]?.text;
 
     if (strongestToken) {
-      feedback.push(`"${strongestToken}" is currently the strongest lever in this run.`);
+      feedback.push(`"${strongestToken}" is having the strongest effect in this run.`);
     }
     if (result.explanation_summary?.segment_strategy) {
       feedback.push(result.explanation_summary.segment_strategy);
@@ -320,7 +360,7 @@ export function ComposerPage() {
           <span style={{ ...mono, fontSize: 11, color: "#1A3D1A" }}>Prompt Composer</span>
           <div style={{ width: 1, height: 18, backgroundColor: "#9C9C9C18" }} />
           <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>
-            {result ? `Session #${result.session.id}` : history[0] ? `Recent session #${history[0].id}` : "Ready"}
+            {result ? `Session #${result.session.id}` : history[0] ? `Recent session #${history[0].id}` : "Waiting"}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -349,7 +389,7 @@ export function ComposerPage() {
 
         {backendNotice && (
           <div className="p-4" style={{ border: "1px solid #D1FF00", backgroundColor: "#D1FF0010" }}>
-            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Offline Mode</div>
+            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Local Data</div>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, margin: 0 }}>{backendNotice}</p>
           </div>
         )}
@@ -459,14 +499,14 @@ export function ComposerPage() {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div style={{ ...mono, fontSize: 10, color: frigateMuted, marginBottom: 6 }}>
-                    Live Segmentation {isAnalyzing && <span className="animate-pulse" style={{ color: "#D1FF00" }}>• Analyzing...</span>}
+                    Prompt Breakdown {isAnalyzing && <span className="animate-pulse" style={{ color: "#D1FF00" }}>Analyzing...</span>}
                   </div>
                   <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, margin: 0 }}>
                     Real-time prompt tracking.
                   </p>
                 </div>
                 <span style={{ ...mono, fontSize: 10, color: isDraftDirty ? "#1A3D1A" : frigateMuted }}>
-                  {isDraftDirty ? "Draft View" : "Last Run View"}
+                  {isDraftDirty ? "Current Draft" : "Last Run"}
                 </span>
               </div>
 
@@ -499,7 +539,7 @@ export function ComposerPage() {
                   ))}
                 </div>
               ) : (
-                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Awaiting prompt...</span>
+                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Enter a prompt to see the breakdown.</span>
               )}
             </div>
 
@@ -532,50 +572,100 @@ export function ComposerPage() {
           >
             <div className="mb-4 flex items-center gap-2">
               <Eye size={13} style={{ color: frigateMuted }} />
-              <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>{isDraftDirty ? "Live Prompt Map" : "Prompt-to-Output Map"}</span>
+              <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>{isDraftDirty ? "How Each Part Can Affect The Result" : "How Each Part Affected The Last Run"}</span>
             </div>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, marginBottom: 16 }}>
               {isDraftDirty
-                ? "Live preview."
-                : "Last run mapping."}
+                ? "Each row explains what that prompt part is likely changing."
+                : "Each row explains how the last run was changed by that prompt part."}
             </p>
-            <div className="flex flex-wrap gap-3">
-              {segments.length > 0 ? (
-                segments.map((segment, index) => (
-                  <motion.button
-                    key={`${segment.text}-${index}`}
-                    className="cursor-pointer flex flex-col items-start gap-1 transition-colors"
+            <div className="grid gap-3">
+              {explanationRows.length > 0 ? (
+                explanationRows.map((row, index) => (
+                  <motion.div
+                    key={`${row.label}-${row.text}-${index}`}
+                    className="p-4"
                     style={{
-                      fontFamily: "Inter, sans-serif",
-                      color: frigateText,
-                      backgroundColor: activeSegment === index ? segment.color : "#F9F8EF",
-                      border: `1px solid ${activeSegment === index ? segment.color : "#9C9C9C20"}`,
-                      borderRadius: 6,
-                      boxShadow: activeSegment === index ? `0 2px 8px ${segment.color}40` : "none",
-                      padding: "10px 14px",
-                      minWidth: 120,
+                      backgroundColor: activeSegment === index ? "#D1FF000D" : "#F9F8EF",
+                      border: `1px solid ${activeSegment === index ? "#D1FF00" : "#9C9C9C20"}`,
                     }}
                     onMouseEnter={() => setActiveSegment(index)}
                     onMouseLeave={() => setActiveSegment(null)}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, ease, delay: 0.1 + index * 0.05 }}
+                    transition={{ duration: 0.35, ease, delay: 0.1 + index * 0.05 }}
                   >
-                    <div className="flex w-full items-center justify-between gap-3">
-                      <span style={{ ...mono, fontSize: 8, opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        {segment.label}
-                      </span>
-                      <span style={{ ...mono, fontSize: 9, opacity: 0.5 }}>{Math.round((segment.influence ?? 0) * 100)}%</span>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <span style={{ ...mono, fontSize: 9, color: "#1A3D1A" }}>{row.label}</span>
+                      <span style={{ ...mono, fontSize: 9, color: frigateMuted }}>{row.influence}% influence</span>
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 700 }}>
-                      {segment.text.length > 36 ? `${segment.text.slice(0, 34)}...` : segment.text}
-                    </span>
-                  </motion.button>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 15, fontWeight: 700, lineHeight: "150%", color: frigateText, marginBottom: 10 }}>
+                      {row.text}
+                    </div>
+                    <div style={{ height: 4, backgroundColor: "#0000000A", marginBottom: 10 }}>
+                      <div style={{ width: `${Math.max(8, row.influence)}%`, height: "100%", backgroundColor: "#D1FF00" }} />
+                    </div>
+                    <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted }}>
+                      {row.effect}
+                    </div>
+                  </motion.div>
                 ))
               ) : (
-                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Awaiting run...</span>
+                <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Run the prompt to see per-part effects.</span>
               )}
             </div>
+          </motion.div>
+
+          <motion.div
+            style={{ padding: "20px clamp(20px, 3vw, 34px)", borderBottom: "1px solid #00000008", backgroundColor: "#F8F7EE" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.45 }}
+          >
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 6 }}>Summary</div>
+                <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, margin: 0 }}>
+                  A short read on the parts carrying the most weight in this prompt.
+                </p>
+              </div>
+              <div style={{ ...mono, fontSize: 10, color: isDraftDirty ? "#1A3D1A" : frigateMuted }}>
+                {isDraftDirty ? "Live draft interpretation" : "Last run explanation"}
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {explainabilityCards.map((card, index) => (
+                <motion.div
+                  key={card.label}
+                  className="p-4"
+                  style={{ border: "1px solid #00000010", backgroundColor: index === 0 ? "#D1FF0012" : "#EBEAE0" }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, ease, delay: 0.48 + index * 0.04 }}
+                >
+                  <div style={{ ...mono, fontSize: 9, color: index === 0 ? "#1A3D1A" : frigateMuted, marginBottom: 8 }}>{card.label}</div>
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 16, fontWeight: 700, lineHeight: "150%", color: frigateText, marginBottom: 8 }}>
+                    {card.value}
+                  </div>
+                  <div style={{ ...mono, fontSize: 9, color: frigateMuted }}>{card.sub}</div>
+                </motion.div>
+              ))}
+            </div>
+
+            {(primarySegment || explanationSummary) && (
+              <div className="mt-4 p-4" style={{ border: "1px solid #00000010", backgroundColor: "#EBEAE0" }}>
+                <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>What Is Driving This</div>
+                <p style={{ fontFamily: "Inter, sans-serif", fontSize: 15, lineHeight: "170%", color: frigateText, marginBottom: 10 }}>
+                  {primarySegment
+                    ? `"${primarySegment.text}" is the strongest prompt part right now, so it has the biggest effect on the ${mode} output.`
+                    : "Add a little more structure to the prompt to make the explanation clearer."}
+                </p>
+                <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, margin: 0 }}>
+                  {primarySegment?.effect || explanationSummary?.segment_strategy}
+                </p>
+              </div>
+            )}
           </motion.div>
 
           <div className="flex-1" style={{ padding: "24px clamp(20px, 3vw, 34px)" }}>
@@ -696,6 +786,32 @@ export function ComposerPage() {
                     </div>
                   )}
 
+                  <div className="mb-5 grid gap-3 md:grid-cols-4">
+                    {topSegments.map((segment, index) => (
+                      <div
+                        key={`${segment.id}-${index}`}
+                        className="p-4"
+                        style={{
+                          border: `1px solid ${activeSegment === index ? segment.color || "#D1FF00" : "#00000010"}`,
+                          backgroundColor: activeSegment === index ? "#D1FF000D" : "#F8F7EE",
+                        }}
+                        onMouseEnter={() => setActiveSegment(index)}
+                        onMouseLeave={() => setActiveSegment(null)}
+                      >
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span style={{ ...mono, fontSize: 9, color: "#1A3D1A" }}>{segment.label}</span>
+                          <span style={{ ...mono, fontSize: 9, color: frigateMuted }}>{Math.round((segment.influence ?? segment.impact ?? 0) * 100)}%</span>
+                        </div>
+                        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, fontWeight: 700, lineHeight: "155%", color: frigateText, marginBottom: 8 }}>
+                          {segment.text}
+                        </div>
+                        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: "155%", color: frigateMuted }}>
+                          {buildExplanationText(segment, mode)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="grid grid-cols-3 gap-4">
                     <ConfidenceMeter value={result.session.trust_score} label="Trust" />
                     <ConfidenceMeter value={result.session.clarity_score} label="Clarity" />
@@ -710,7 +826,7 @@ export function ComposerPage() {
                   animate={{ opacity: 1 }}
                 >
                   <Sparkles size={20} style={{ color: frigateMuted, marginBottom: 10, opacity: 0.25 }} />
-                  <p style={{ ...mono, fontSize: 10, color: frigateMuted }}>Awaiting execution...</p>
+                  <p style={{ ...mono, fontSize: 10, color: frigateMuted }}>Run the prompt to see the output.</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -736,7 +852,7 @@ export function ComposerPage() {
                 {explanationSummary ? (
                   <div className="p-4" style={{ border: "1px solid #00000010", backgroundColor: "#F9F8EF" }}>
                     <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 10 }}>
-                      {isDraftDirty ? "How This Draft Is Read" : "How This Run Was Composed"}
+                      {isDraftDirty ? "How The Draft Is Read" : "How The Last Run Was Read"}
                     </div>
                     <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateMuted, marginBottom: 10 }}>
                       {explanationSummary?.overview}
@@ -747,48 +863,39 @@ export function ComposerPage() {
                   </div>
                 ) : null}
 
-                {segments.length > 0 ? (
-                  segments.map((segment, index) => (
-                    <motion.div
-                      key={`${segment.text}-${index}`}
-                      className="p-4"
-                      style={{
-                        backgroundColor: activeSegment === index ? "#D1FF0008" : "#9C9C9C06",
-                        border: `1px solid ${activeSegment === index ? "#D1FF0025" : "#9C9C9C10"}`,
-                        cursor: "default",
-                      }}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, ease, delay: index * 0.05 }}
-                      onMouseEnter={() => setActiveSegment(index)}
-                      onMouseLeave={() => setActiveSegment(null)}
-                    >
-                      <div className="mb-2 flex items-center gap-2">
-                        <div style={{ width: 8, height: 8, backgroundColor: segment.color }} />
-                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: 15, fontWeight: 700, color: frigateText }}>{segment.label}</span>
-                      </div>
-                      <div style={{ ...mono, fontSize: 9, color: "#1A3D1A", marginBottom: 8 }}>{segment.kind}</div>
-                      <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: frigateText, marginBottom: 8 }}>
-                        {segment.text}
-                      </p>
-                      <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "168%", color: frigateMuted }}>
-                        {buildExplanationText(segment, mode)}
-                      </p>
-                      <div className="mt-2">
-                        <span style={{ ...mono, fontSize: 9, color: frigateMuted }}>Influence: {Math.round((segment.influence ?? 0) * 100)}%</span>
-                      </div>
-                    </motion.div>
-                  ))
+                {topSegments.length > 0 ? (
+                  <div className="p-4" style={{ border: "1px solid #00000010", backgroundColor: "#9C9C9C06" }}>
+                    <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 12 }}>Top Drivers</div>
+                    <div className="grid gap-3">
+                      {topSegments.map((segment, index) => (
+                        <div
+                          key={`${segment.text}-${index}`}
+                          style={{ borderBottom: index === topSegments.length - 1 ? "none" : "1px solid #00000010", paddingBottom: 12 }}
+                        >
+                          <div className="mb-1 flex items-center justify-between gap-2">
+                            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, fontWeight: 700, color: frigateText }}>{segment.label}</span>
+                            <span style={{ ...mono, fontSize: 9, color: frigateMuted }}>{Math.round((segment.influence ?? 0) * 100)}%</span>
+                          </div>
+                          <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "160%", color: frigateText, marginBottom: 6 }}>
+                            {segment.text}
+                          </p>
+                          <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: "160%", color: frigateMuted, margin: 0 }}>
+                            {buildExplanationText(segment, mode)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
                   <div className="p-4" style={{ border: "1px solid #00000010" }}>
-                    <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Awaiting explanation data...</span>
+                    <span style={{ ...mono, fontSize: 10, color: frigateMuted }}>Explanation data will appear here after analysis.</span>
                   </div>
                 )}
 
                 {guidedFeedback.length > 0 && (
                   <div className="p-4" style={{ border: "1px solid #00000010" }}>
-                    <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 10 }}>Guided Feedback</div>
-                    {guidedFeedback.map((feedback, index) => (
+                    <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 10 }}>Next Steps</div>
+                    {guidedFeedback.slice(0, 3).map((feedback, index) => (
                       <div key={`${index}-${feedback}`} className="mb-3 flex items-start gap-2 last:mb-0">
                         <Zap size={12} style={{ color: "#1A3D1A", flexShrink: 0, marginTop: 4 }} />
                         <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: frigateMuted, lineHeight: "160%" }}>{feedback}</span>

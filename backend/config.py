@@ -81,6 +81,7 @@ def get_settings() -> Settings:
         str(models_root / "frigatescore" / "manifest.json"),
     )
     default_segmenter_path = _first_existing_path(
+        models_root / "frigate-segmenter-epoch3-overnight",
         models_root / "frigate-segmenter-epoch1-baseline",
         models_root / "frigate-segmenter",
     )
@@ -88,11 +89,7 @@ def get_settings() -> Settings:
         "ML_SEGMENTER_MODEL_PATH",
         str(default_segmenter_path),
     )
-    default_regressor_path = _first_existing_path(
-        models_root / "frigatescore-regressor-distilbert-goldmix-cpu",
-        models_root / "frigatescore-regressor-distilbert-gold-cpu",
-        models_root / "frigatescore-regressor-distilbert-v1",
-    )
+    default_regressor_path = models_root / "frigatescore-regressor"
     ml_score_regressor_path = os.getenv(
         "ML_SCORE_REGRESSOR_MODEL_PATH",
         str(default_regressor_path),

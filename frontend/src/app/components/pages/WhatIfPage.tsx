@@ -261,7 +261,7 @@ export function WhatIfPage() {
 
         {backendNotice && (
           <div className="p-4" style={{ border: "1px solid #D1FF00", backgroundColor: "#D1FF0010" }}>
-            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Offline Mode</div>
+            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Local Data</div>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: "#686868", margin: 0 }}>{backendNotice}</p>
           </div>
         )}
@@ -341,13 +341,13 @@ export function WhatIfPage() {
                 <div className="mt-3 rounded-none p-3" style={{ border: "1px solid #00000010", backgroundColor: "#F7F6EC" }}>
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <div style={{ ...mono, fontSize: 10, color: "#686868", marginBottom: 6 }}>Live Segmentation</div>
+                      <div style={{ ...mono, fontSize: 10, color: "#686868", marginBottom: 6 }}>Prompt Breakdown</div>
                       <p style={{ fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: "160%", color: "#686868", margin: 0 }}>
                         Live preview.
                       </p>
                     </div>
                     <span style={{ ...mono, fontSize: 10, color: scenario.draftDirty ? "#1A3D1A" : "#686868" }}>
-                      {scenario.draftDirty ? "Draft View" : "Last Compare"}
+                      {scenario.draftDirty ? "Current Draft" : "Last Compare"}
                     </span>
                   </div>
 
@@ -369,7 +369,7 @@ export function WhatIfPage() {
                       ))}
                     </div>
                   ) : (
-                    <span style={{ ...mono, fontSize: 10, color: "#686868" }}>Awaiting scenario...</span>
+                    <span style={{ ...mono, fontSize: 10, color: "#686868" }}>Enter text to see the breakdown.</span>
                   )}
                 </div>
               </div>
@@ -395,7 +395,7 @@ export function WhatIfPage() {
                       </>
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                        <span style={{ ...mono, fontSize: 9, color: "#686868" }}>Awaiting comparison.</span>
+                        <span style={{ ...mono, fontSize: 9, color: "#686868" }}>Run a comparison to see the output.</span>
                       </div>
                     )}
                     <div className="absolute bottom-3 right-3">
@@ -405,7 +405,7 @@ export function WhatIfPage() {
                 ) : (
                   <div className="absolute inset-0 overflow-auto p-5">
                     <div style={{ ...mono, fontSize: 10, color: "#686868", marginBottom: 8 }}>Generated text</div>
-                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 15, lineHeight: "175%", color: "#050505", whiteSpace: "pre-wrap" }}>{scenario.session?.output || "Awaiting comparison."}</p>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: 15, lineHeight: "175%", color: "#050505", whiteSpace: "pre-wrap" }}>{scenario.session?.output || "Run a comparison to see the output."}</p>
                   </div>
                 )}
               </div>
@@ -413,7 +413,7 @@ export function WhatIfPage() {
               {scenario.explanation ? (
                 <div className="p-3.5" style={{ borderTop: "1px solid #9C9C9C08" }}>
                   <div style={{ ...mono, fontSize: 10, color: "#686868", marginBottom: 8 }}>
-                    {scenario.draftDirty ? "How This Draft Is Read" : "How This Scenario Is Read"}
+                    {scenario.draftDirty ? "How The Draft Is Read" : "How This Version Is Read"}
                   </div>
                   {scenario.session && scenario.draftDirty ? (
                     <div style={{ ...mono, fontSize: 9, color: "#1A3D1A", marginBottom: 8 }}>Draft changed. Compare again to refresh this scenario.</div>
@@ -461,7 +461,7 @@ export function WhatIfPage() {
                   li: ({node, ...props}) => <li style={{ color: "#686868", fontSize: 14, lineHeight: "1.7", marginBottom: 8 }} {...props} />
                 }}
               >
-                {result?.difference || "Awaiting comparison."}
+                {result?.difference || "Run a comparison to see the summary."}
               </ReactMarkdown>
             </div>
           </div>
@@ -560,13 +560,13 @@ export function WhatIfPage() {
                 title: "Highest Leverage",
                 text: result
                   ? `${Math.abs(Math.round(result.delta.clarity)) >= Math.abs(Math.round(result.delta.quality)) ? "Clarity" : "Quality"} had the largest delta.`
-                  : "Awaiting comparison.",
+                  : "Run a comparison to see the change.",
               },
               {
                 title: "Recommended Edit",
                 text: result?.delta.clarity && result.delta.clarity >= 0
                   ? "Use modified variant."
-                  : "Awaiting comparison.",
+                  : "Run a comparison to see the change.",
               },
               {
                 title: "Predictability Score",

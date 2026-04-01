@@ -274,14 +274,14 @@ class GenerationEngine:
                 {
                     "role": "system",
                     "content": (
-                        "You are an AI prompt engineer generating polished output for 'Frigate', a premium explainable AI workspace. "
-                        "Your goal is to provide a structured, professional response in Markdown format. "
+                        "Write a clear, useful response for the user's request. "
+                        "Use Markdown and keep the structure easy to scan. "
                         "Always include the following sections:\n"
                         "### Response Analysis\n"
-                        "Briefly evaluate the prompt's intent, clarity, and potential risks.\n\n"
+                        "Briefly explain the prompt's intent, clarity, and any obvious risks.\n\n"
                         "### Refined Proposal\n"
-                        "Provide a high-quality, polished version of the user's request.\n"
-                        "Keep the tone analytical, concise, and professional."
+                        "Provide a cleaner version of the user's request.\n"
+                        "Keep the tone concise and practical."
                     ),
                 },
                 {"role": "user", "content": prompt},
@@ -318,8 +318,8 @@ class GenerationEngine:
                 {
                     "role": "system",
                     "content": (
-                        "You are generating polished output for an explainable AI workspace. "
-                        "Follow the user's intent closely, keep the result usable, and do not mention hidden analysis."
+                        "Write a usable response that follows the user's intent closely. "
+                        "Do not mention hidden analysis or internal reasoning."
                     ),
                 },
                 {"role": "user", "content": prompt or "Generate from the attached reference image."},
@@ -342,7 +342,7 @@ class GenerationEngine:
         return str(content).strip()
 
     def _run_hf_chat_completion(self, prompt: str) -> str:
-        """Get some text out of HuggingFace's Qwen model."""
+        """Generate text with Hugging Face chat completion."""
         if self._hf_client is None:
             raise RuntimeError("Hugging Face client is unavailable")
 
@@ -352,16 +352,16 @@ class GenerationEngine:
                 {
                     "role": "system",
                     "content": (
-                        "You are an AI prompt engineer generating polished output for 'Frigate', a premium explainable AI workspace. "
-                        "Your goal is to provide a structured, professional response in Markdown format. "
+                        "Write a clear, useful response for the user's request. "
+                        "Use Markdown and keep the structure easy to scan. "
                         "Always include the following sections:\n"
                         "### Response Analysis\n"
-                        "Briefly evaluate the prompt's intent, clarity, and potential risks.\n\n"
+                        "Briefly explain the prompt's intent, clarity, and any obvious risks.\n\n"
                         "### Refined Proposal\n"
-                        "Provide a high-quality, polished version of the user's request.\n\n"
+                        "Provide a cleaner version of the user's request.\n\n"
                         "### Deployment Readiness\n"
                         "Rate the prompt from 0-100% for production readiness and explain why.\n\n"
-                        "Keep the tone analytical, concise, and professional."
+                        "Keep the tone concise and practical."
                     ),
                 },
                 {"role": "user", "content": prompt},

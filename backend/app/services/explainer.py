@@ -22,7 +22,7 @@ class ExplainabilityService:
     """Generate prompt segments, effect descriptions, and compact impact mappings."""
 
     _effect_templates = {
-        "object": "This is the core subject signal that anchors what the model prioritizes first.",
+        "object": "This is the main subject, so it usually has the biggest effect on the result.",
         "attributes": "These modifiers shape important descriptive traits such as color, texture, and size.",
         "style": "This steers the aesthetic treatment, tone, and finishing decisions.",
         "environment": "This places the subject in context and influences scene layout or narrative framing.",
@@ -80,7 +80,7 @@ class ExplainabilityService:
                 effect = f'The "{before.label}" segment was removed, reducing its influence in variant B.'
             else:
                 change_type = "added"
-                effect = f'The "{after.label}" segment was introduced in variant B, adding a new steering signal.'
+                effect = f'The "{after.label}" segment was added in variant B, so it likely contributes to the change.'
 
             label = (after or before).label
             changes.append(
@@ -181,7 +181,7 @@ class ExplainabilityService:
     ) -> PromptExplanationSummary:
         active_parts = [segment.label.lower() for segment in segments[:4]]
         overview = (
-            f"Frigate decomposed this {mode} request into {', '.join(active_parts)} so each steering signal can be inspected."
+            f"This {mode} request was broken into {', '.join(active_parts)} so each prompt part can be inspected."
         )
         segment_strategy = (
             "The orchestrator prioritizes the object first, then modifiers like attributes and style, before scene context."

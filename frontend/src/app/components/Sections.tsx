@@ -885,7 +885,7 @@ export function TechStack() {
 // About the team
 export function Team() {
   const members = [
-    { name: "Sudharshan Ravichandran", role: "Founder & CEO", bio: "Platform Architect. Leading the vision for explainable multimodal generation." },
+    { name: "Sudharshan Ravichandran", role: "Founder & CEO", bio: "Platform architect focused on prompt analysis and explainability." },
     { name: "ENGINEERING LEAD", role: "Head of Systems", bio: "Architecting automation systems for mission-critical infrastructure." },
     { name: "SOLUTIONS ARCHITECT", role: "AI Infrastructure", bio: "Leading the integration of complex generation pipelines." },
     { name: "OPERATIONS LEAD", role: "Growth & Scale", bio: "Optimizing operational efficiency for global platform delivery." },

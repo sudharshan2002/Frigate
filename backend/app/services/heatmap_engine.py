@@ -1,4 +1,4 @@
-"""Heatmap generation for explainable image outputs."""
+"""Heatmap generation for image outputs."""
 
 from __future__ import annotations
 

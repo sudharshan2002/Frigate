@@ -331,11 +331,11 @@ function buildMockTextOutput(prompt: string, variant = "base", referenceImageNam
     variant === "modified"
       ? "It leans into measurable improvement, faster review cycles, and a clearer shipping story."
       : "It stays grounded in explainability, control, and safer team workflows.";
-  const referenceLine = referenceImageName ? `The attached reference image keeps the visual direction anchored in ${referenceImageName}.` : null;
+  const referenceLine = referenceImageName ? `The attached reference image keeps the visual direction tied to ${referenceImageName}.` : null;
 
   return [
     "Frigate helps teams shape prompts, inspect outputs, and compare revisions with clearer control.",
-    `Prompt mapping keeps the strongest signals visible, while trust scoring and guided comparison make ${focus} easier to review.`,
+    `Prompt mapping keeps the main prompt parts visible, while trust scoring and comparison make ${focus} easier to review.`,
     referenceLine,
     closer,
   ].filter(Boolean).join("\n\n");
@@ -370,7 +370,7 @@ function buildSegments(prompt: string, mode: GenerationMode, referenceImage?: Re
 
   const clauses = (rawClauses.length > 0 ? rawClauses : [normalizedPrompt]).slice(0, 5);
   if (referenceImage) {
-    clauses.push("Use the attached reference image as a visual anchor.");
+    clauses.push("Use the attached reference image as the main visual guide.");
   }
 
   return clauses.slice(0, 6).map((clause, index) => {
@@ -408,7 +408,7 @@ function buildSegments(prompt: string, mode: GenerationMode, referenceImage?: Re
     const impact = Number(clamp(0.9 - index * 0.1 + (kind === "reference" ? 0.02 : 0), 0.34, 0.96).toFixed(2));
     const effect =
       kind === "subject"
-        ? `This is the main ${mode === "image" ? "scene" : "content"} anchor, so it usually shapes the first draft direction.`
+        ? `This is the main ${mode === "image" ? "scene" : "content"} cue, so it usually shapes the first draft direction.`
         : kind === "style"
           ? "This segment controls the aesthetic treatment and emotional tone."
           : kind === "composition"
@@ -418,7 +418,7 @@ function buildSegments(prompt: string, mode: GenerationMode, referenceImage?: Re
               : kind === "output"
                 ? `This tells the model what sort of ${mode === "image" ? "visual artifact" : "written artifact"} to produce.`
                 : kind === "reference"
-                  ? "This uses the attached image as an anchor, so other segments adapt around it."
+                  ? "This uses the attached image as the main guide, so other segments adjust around it."
                   : "This adds secondary detail that fine-tunes the result.";
 
     return {
@@ -446,12 +446,12 @@ function buildExplanationSummary(
 ): PromptExplanationSummary {
   return {
     overview: prompt.trim()
-      ? "Frigate is reading this prompt as a stack of steering instructions instead of one flat sentence."
-      : "Frigate is leaning on the attached image as the main anchor and using text as optional guidance.",
-    segment_strategy: `The strongest segments usually establish the ${mode === "image" ? "subject, look, and composition" : "artifact, framing, and tone"} first, then detail segments refine the finish.`,
+      ? "This prompt is being read as a set of separate instructions rather than one flat sentence."
+      : "The attached image is doing most of the work, with the text adding extra guidance.",
+    segment_strategy: `The highest-impact segments usually set the ${mode === "image" ? "subject, look, and composition" : "output type, framing, and tone"} first, then the smaller details adjust the result.`,
     improvement_tip: referenceImage
       ? "If you want tighter results, keep the reference image but strengthen one text segment with a concrete constraint."
-      : "If you want tighter results, add one explicit constraint or attach a reference image to anchor the style.",
+      : "If you want tighter results, add one explicit constraint or attach a reference image to guide the style.",
   };
 }
 
@@ -483,7 +483,7 @@ function buildSegmentChanges(originalSegments: PromptSegment[], modifiedSegments
           : change_type === "modified"
             ? `The "${label}" segment changed wording, so it likely contributes to the delta.`
             : change_type === "added"
-              ? `The "${label}" segment was introduced in variant B, adding a new steering signal.`
+              ? `The "${label}" segment was added in variant B, so it likely contributes to the change.`
               : `The "${label}" segment was removed from variant B, reducing its influence.`,
     };
   });

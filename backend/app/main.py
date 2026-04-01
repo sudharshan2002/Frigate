@@ -1,4 +1,4 @@
-"""Main setup file for the backend API."""
+"""Set up the backend API and shared services."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def _configure_logging() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Spin up all our shared services when the app starts."""
+    """Create shared services when the app starts."""
     settings = get_settings()
 
     generator = GenerationEngine(settings)
@@ -92,14 +92,14 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    """Build and configure the main FastAPI app instance."""
+    """Build the FastAPI app."""
     _configure_logging()
     settings = get_settings()
 
     app = FastAPI(
         title=settings.app_name,
         version="2.0.0",
-        description="Backend API for Frigate's modular explainable multimodal AI pipeline.",
+        description="Backend API for Frigate prompt analysis and generation.",
         lifespan=lifespan,
     )
 

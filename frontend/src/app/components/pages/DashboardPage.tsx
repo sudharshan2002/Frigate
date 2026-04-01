@@ -172,7 +172,7 @@ export function DashboardPage() {
 
         {backendNotice && (
           <div className="p-4" style={{ border: "1px solid #D1FF00", backgroundColor: "#D1FF0010" }}>
-            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Offline Mode</div>
+            <div style={{ ...mono, fontSize: 10, color: "#1A3D1A", marginBottom: 8 }}>Local Data</div>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: 14, lineHeight: "165%", color: "#686868", margin: 0 }}>{backendNotice}</p>
           </div>
         )}

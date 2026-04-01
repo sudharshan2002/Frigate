@@ -29,7 +29,7 @@ class NLPAnalyzer:
                     text=chunk.text,
                     kind="object",
                     impact=0.85 if i == 0 else 0.75,
-                    effect=f"The primary subject '{chunk.text}' anchors the entire generation."
+                    effect=f"The primary subject '{chunk.text}' sets the main direction for the result."
                 )
             )
 

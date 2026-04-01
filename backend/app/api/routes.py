@@ -1,4 +1,4 @@
-"""Where all our API routes connect to the app."""
+"""API routes for Frigate."""
 
 from __future__ import annotations
 
@@ -79,7 +79,7 @@ def _internal_error(message: str) -> HTTPException:
 
 @router.post("/generate", response_model=GenerateResponse, tags=["prompt"])
 async def generate_content(payload: GenerateRequest, request: Request) -> GenerateResponse:
-    """Get AI text and pictures, plus the data explaining how we got them."""
+    """Generate text or images and return the analysis used by the UI."""
     orchestrator = _get_orchestrator(request)
 
     try:
@@ -98,7 +98,7 @@ async def generate_content(payload: GenerateRequest, request: Request) -> Genera
 
 @router.post("/analyze", response_model=AnalyzeResponse, tags=["prompt"])
 async def analyze_live(payload: AnalyzeRequest, request: Request) -> AnalyzeResponse:
-    """Analyze text in real time to show live feedback in the UI."""
+    """Analyze a draft prompt for live feedback in the UI."""
     orchestrator = _get_orchestrator(request)
 
     try:
@@ -113,7 +113,7 @@ async def analyze_live(payload: AnalyzeRequest, request: Request) -> AnalyzeResp
 
 @router.post("/what-if", response_model=WhatIfResponse, tags=["prompt"])
 async def what_if_analysis(payload: WhatIfRequest, request: Request) -> WhatIfResponse:
-    """Compare an old prompt to a new one and kick out a breakdown."""
+    """Compare two prompts and return the differences."""
     orchestrator = _get_orchestrator(request)
 
     try:
@@ -132,7 +132,7 @@ async def what_if_analysis(payload: WhatIfRequest, request: Request) -> WhatIfRe
 
 @router.post("/explain", response_model=ExplainResponse, tags=["explainability"])
 async def explain_prompt(payload: ExplainRequest, request: Request) -> ExplainResponse:
-    """Map out how much each word actually affected the final output."""
+    """Estimate how each segment influenced the final result."""
     explainer = _get_explainer(request)
     segmenter = request.app.state.segmenter
 

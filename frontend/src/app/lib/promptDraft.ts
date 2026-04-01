@@ -30,7 +30,7 @@ function classifyClause(clause: string, index: number) {
 
 function buildEffect(kind: string, mode: GenerationMode) {
   if (kind === "subject") {
-    return `This is the main ${mode === "image" ? "scene" : "content"} anchor, so it usually sets the direction first.`;
+    return `This is the main ${mode === "image" ? "scene" : "content"} cue, so it usually sets the direction first.`;
   }
   if (kind === "style") {
     return "This segment controls the overall tone, finish, and aesthetic treatment.";
@@ -79,8 +79,8 @@ export function buildDraftSegments(prompt: string, mode: GenerationMode): Prompt
 export function buildDraftExplanationSummary(prompt: string, mode: GenerationMode): PromptExplanationSummary {
   if (!prompt.trim()) {
     return {
-      overview: "Start typing and Frigate will break the draft into visible steering segments immediately.",
-      segment_strategy: `The strongest segments usually establish the ${mode === "image" ? "subject, look, and composition" : "artifact, framing, and tone"} first, then the lighter segments tune the finish.`,
+      overview: "Start typing to see the draft split into prompt parts.",
+      segment_strategy: `The highest-impact segments usually set the ${mode === "image" ? "subject, look, and composition" : "output type, framing, and tone"} first, then the smaller details tune the result.`,
       improvement_tip: "Add one concrete subject or constraint to make the live segmentation more useful.",
     };
   }
@@ -89,12 +89,12 @@ export function buildDraftExplanationSummary(prompt: string, mode: GenerationMod
   const strongest = segments[0]?.label.toLowerCase() || "subject";
 
   return {
-    overview: "Frigate is reading this draft as a stack of steering instructions instead of one flat sentence.",
+    overview: "This draft is being read as a set of separate instructions instead of one flat sentence.",
     segment_strategy: `Right now the draft is led by the ${strongest} layer, with the later clauses refining the ${mode === "image" ? "look and framing" : "wording and emphasis"}.`,
     improvement_tip:
       segments.length >= 3
         ? "If you want tighter behavior, add one explicit constraint instead of another descriptive phrase."
-        : "Add one more concrete clause if you want clearer separation between the steering segments.",
+        : "Add one more concrete clause if you want clearer separation between the prompt parts.",
   };
 }
 
@@ -110,7 +110,7 @@ export function buildDraftFeedback(prompt: string, mode: GenerationMode, segment
   const feedback = [];
 
   if (strongest) {
-    feedback.push(`"${strongest.text}" is currently acting as the main steering segment.`);
+    feedback.push(`"${strongest.text}" is currently the main prompt driver.`);
   }
   if (!hasConstraint) {
     feedback.push("Add one hard constraint if you want the output to behave more predictably.");

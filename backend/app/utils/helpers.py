@@ -1,4 +1,4 @@
-"""Shared helper functions for tokenization, scoring, prompt diffs, and image helpers."""
+"""Shared helper functions used across the backend."""
 
 from __future__ import annotations
 
@@ -182,7 +182,7 @@ def decode_data_url_image(data_url: str) -> Image.Image | None:
 
 
 def build_mock_text_output(prompt: str) -> str:
-    """Return a deterministic text response shaped like a GenAI summary."""
+    """Return a stable sample text response for offline mode."""
     tokens = tokenize_text(prompt)
     focus_terms = ", ".join(tokens[:5]) if tokens else "the requested concept"
     return (
