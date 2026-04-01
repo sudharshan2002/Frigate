@@ -20,6 +20,8 @@ const frigateLight = "#F5F4E7";
 const frigateText = "#050505";
 const frigateMuted = "#686868";
 const frigateSoft = "#A8A8A1";
+const homepageVideoSrc = "/homepage.mp4";
+const homepageVideoPoster = "/preview-poster.png";
 
 function BlurReveal({
   children,
@@ -333,7 +335,16 @@ function Hero() {
               style={{ maxWidth: 360, padding: 0 }}
             >
               <div className="relative aspect-[4/3] w-full bg-[#050505] transition-opacity group-hover:opacity-90">
-                <video src="https://www.w3schools.com/html/mov_bbb.mp4" autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-60" />
+                <video
+                  src={homepageVideoSrc}
+                  poster={homepageVideoPoster}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 h-full w-full object-cover opacity-60"
+                  style={{ filter: "invert(1)" }}
+                />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#D1FF00] bg-[#D1FF0020] backdrop-blur-sm transition-transform group-hover:scale-110">
                     <Play size={20} fill="#D1FF00" style={{ color: "#D1FF00", marginLeft: 4 }} />
@@ -379,7 +390,14 @@ function Hero() {
               >
                 <X size={28} />
               </button>
-              <video src="https://www.w3schools.com/html/mov_bbb.mp4" controls autoPlay className="w-full h-full object-contain bg-black" />
+              <video
+                src={homepageVideoSrc}
+                poster={homepageVideoPoster}
+                controls
+                autoPlay
+                className="w-full h-full object-contain bg-black"
+                style={{ filter: "invert(1)" }}
+              />
             </motion.div>
           </motion.div>
         )}
